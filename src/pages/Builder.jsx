@@ -19,9 +19,11 @@ export default function Builder() {
 
     // BSR (Browser-Side Rendering) Raw HTML
     const [rawHtml, setRawHtml] = useState(null);
+    const [initialLoading, setInitialLoading] = useState(true);
 
     // Load template list once
     useEffect(() => {
+        setInitialLoading(true);
         listTemplates()
             .then((d) => {
                 const list = d.templates ?? [];
@@ -29,9 +31,12 @@ export default function Builder() {
                 if (templateName) {
                     const found = list.find((t) => t.name === templateName);
                     if (found) setSelected(found);
+                } else {
+                    setSelected(null);
                 }
             })
-            .catch((e) => setFetchError(e.message));
+            .catch((e) => setFetchError(e.message))
+            .finally(() => setInitialLoading(false));
     }, [templateName]);
 
     // Fetch raw HTML when template changes (for BSR Preview)
@@ -145,63 +150,74 @@ export default function Builder() {
                 {/* Left Panel: Form */}
                 <form onSubmit={handleSubmit} className="builder-card" style={{ flex: '1 1 350px', margin: 0 }}>
 
-                    {/* Template selector */}
-                    <div className="form-group">
-                        <label htmlFor="template">📦 选择模板</label>
-                        <select
-                            id="template"
-                            value={selectedTemplate?.name ?? ''}
-                            onChange={handleTemplateChange}
-                            required
-                        >
-                            <option value="">-- 请选择 --</option>
-                            {templates.map((t) => (
-                                <option key={t.name} value={t.name}>{t.name}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Subdomain */}
-                    <div className="form-group">
-                        <label htmlFor="subdomain">🌐 专属子域名</label>
-                        <div className="input-row">
-                            <input
-                                id="subdomain"
-                                type="text"
-                                value={subdomain}
-                                onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                                placeholder="e.g. sweeties"
-                                required
-                            />
-                            <span className="input-suffix">.{BASE_DOMAIN}</span>
+                    {initialLoading && (
+                        <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
+                            <div className="spinner" style={{ marginBottom: '10px' }}></div>
+                            <div>正在拉取云端数据...</div>
                         </div>
-                    </div>
-
-                    {/* Dynamic fields from schema */}
-                    {selectedTemplate && !selectedTemplate.static && (selectedTemplate.fields ?? []).length > 0 && (
-                        <>
-                            <hr className="builder-divider" />
-                            <p className="builder-section-label">📝 个性化内容设置</p>
-                            {selectedTemplate.fields.map((key) => (
-                                <div className="form-group" key={key}>
-                                    <label htmlFor={`f-${key}`}>{key}</label>
-                                    <textarea
-                                        id={`f-${key}`}
-                                        rows={2}
-                                        value={fieldValues[key] ?? ''}
-                                        onChange={(e) => setFieldValues((p) => ({ ...p, [key]: e.target.value }))}
-                                        placeholder={`请输入 ${key}`}
-                                    />
-                                </div>
-                            ))}
-                        </>
                     )}
 
-                    <div className="builder-submit">
-                        <button type="submit" className="btn btn--primary" disabled={loading}>
-                            {loading ? '全网生成中...' : '✨ 生成我的专属页面'}
-                        </button>
-                    </div>
+                    {!initialLoading && (
+                        <>
+                            {/* Template selector */}
+                            <div className="form-group">
+                                <label htmlFor="template">📦 选择模板</label>
+                                <select
+                                    id="template"
+                                    value={selectedTemplate?.name ?? ''}
+                                    onChange={handleTemplateChange}
+                                    required
+                                >
+                                    <option value="">-- 请选择 --</option>
+                                    {templates.map((t) => (
+                                        <option key={t.name} value={t.name}>{t.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Subdomain */}
+                            <div className="form-group">
+                                <label htmlFor="subdomain">🌐 专属子域名</label>
+                                <div className="input-row">
+                                    <input
+                                        id="subdomain"
+                                        type="text"
+                                        value={subdomain}
+                                        onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                                        placeholder="e.g. sweeties"
+                                        required
+                                    />
+                                    <span className="input-suffix">.{BASE_DOMAIN}</span>
+                                </div>
+                            </div>
+
+                            {/* Dynamic fields from schema */}
+                            {selectedTemplate && !selectedTemplate.static && (selectedTemplate.fields ?? []).length > 0 && (
+                                <>
+                                    <hr className="builder-divider" />
+                                    <p className="builder-section-label">📝 个性化内容设置</p>
+                                    {selectedTemplate.fields.map((key) => (
+                                        <div className="form-group" key={key}>
+                                            <label htmlFor={`f-${key}`}>{key}</label>
+                                            <textarea
+                                                id={`f-${key}`}
+                                                rows={2}
+                                                value={fieldValues[key] ?? ''}
+                                                onChange={(e) => setFieldValues((p) => ({ ...p, [key]: e.target.value }))}
+                                                placeholder={`请输入 ${key}`}
+                                            />
+                                        </div>
+                                    ))}
+                                </>
+                            )}
+
+                            <div className="builder-submit">
+                                <button type="submit" className="btn btn--primary" disabled={loading}>
+                                    {loading ? '全网生成中...' : '✨ 生成我的专属页面'}
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </form>
 
                 {/* Right Panel: Live Preview iframe (BSR) */}

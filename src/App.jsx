@@ -2,6 +2,7 @@ import { Routes, Route, NavLink } from 'react-router-dom';
 import Home from './pages/Home.jsx';
 import Gallery from './pages/Gallery.jsx';
 import Builder from './pages/Builder.jsx';
+import Admin from './pages/Admin.jsx';
 
 function Navbar() {
     return (
@@ -30,6 +31,7 @@ export default function App() {
                 <Route path="/gallery" element={<Gallery />} />
                 <Route path="/builder" element={<Builder />} />
                 <Route path="/builder/:templateName" element={<Builder />} />
+                <Route path="/admin/upload" element={<Admin />} />
             </Routes>
         </>
     );

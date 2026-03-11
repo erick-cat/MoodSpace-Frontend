@@ -45,7 +45,7 @@ export default function Builder() {
             return;
         }
 
-        const apiBase = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
+        const apiBase = import.meta.env.VITE_API_BASE_URL ?? '';
         fetch(`${apiBase}/api/template/raw/${selectedTemplate.name}`)
             .then(res => {
                 if (!res.ok) throw new Error('Failed to fetch raw template');

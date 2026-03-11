@@ -1,4 +1,5 @@
-const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
+// If VITE_API_BASE_URL is not set (i.e. Production on VPS), use relative path
+const BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
 /** 
  * Temporary helper to identity a user across sessions until real Auth is added.

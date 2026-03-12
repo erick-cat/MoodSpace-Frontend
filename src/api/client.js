@@ -40,7 +40,12 @@ export async function listTemplates() {
         // Try the static file first — it's served directly by Nginx without
         // hitting Node.js, making it extremely fast (< 5ms response time).
         const res = await fetch('/templates.json', { cache: 'no-cache' });
-        if (res.ok) return res.json();
+        // Only parse if it's actually JSON. Nginx might return index.html (SPA fallback)
+        // if templates.json hasn't been generated yet, which would cause res.json() to fail.
+        const contentType = res.headers.get('content-type');
+        if (res.ok && contentType && contentType.includes('application/json')) {
+            return res.json();
+        }
     } catch { /* ignore, fall through to API */ }
     // Fallback to the API if the static file doesn't exist yet
     return apiFetch('/api/template/list');

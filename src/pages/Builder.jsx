@@ -20,6 +20,9 @@ const DEFAULT_VALUES = {
     paragraphs: '在这个特别的日子里，\n我想对你说，\n遇见你是我这辈子最幸运的事。'
 };
 
+// Global cache to prevent redundant fetches across navigation
+let globalTemplatesCache = [];
+
 export default function Builder() {
     const { templateName } = useParams();
     const navigate = useNavigate();
@@ -42,33 +45,43 @@ export default function Builder() {
     // Load template list and check for edit mode
     useEffect(() => {
         const init = async () => {
-            setInitialLoading(true);
-            try {
-                const d = await listTemplates();
-                const list = d.templates ?? [];
+            // Optimization: Use global cache if available
+            let list = globalTemplatesCache;
+            if (list.length === 0) {
+                setInitialLoading(true);
+                try {
+                    const d = await listTemplates();
+                    list = d.templates ?? [];
+                    globalTemplatesCache = list;
+                    setTemplates(list);
+                } catch (e) {
+                    toast.error(`网页模板列表获取失败：${e.message}`);
+                    setInitialLoading(false);
+                    return;
+                }
+            } else if (templates.length === 0) {
+                // If cache exists but state is empty (e.g., component remounted)
                 setTemplates(list);
+            }
 
+            try {
                 // Handle Edit Mode
                 if (editSubdomain && user) {
-                    try {
-                        const cfgRes = await getConfigBySubdomain(editSubdomain, user.id);
-                        if (cfgRes.success && cfgRes.data) {
-                            const project = cfgRes.data;
-                            setSubdomain(project.subdomain);
-                            const found = list.find(t => t.name === project.type);
-                            if (found) setSelected(found);
-                            setFieldValues(project.data || {});
-                        }
-                    } catch (err) {
-                        toast.error('获取原有网页信息失败');
-                        console.error(err);
+                    const cfgRes = await getConfigBySubdomain(editSubdomain, user.id);
+                    if (cfgRes.success && cfgRes.data) {
+                        const project = cfgRes.data;
+                        setSubdomain(project.subdomain);
+                        const found = list.find(t => t.name === project.template_type);
+                        if (found) setSelected(found);
+                        setFieldValues(project.data || {});
                     }
                 } else if (templateName) {
                     const found = list.find((t) => t.name === templateName);
                     if (found) setSelected(found);
                 }
-            } catch (e) {
-                toast.error(`网页模板列表获取失败：${e.message}`);
+            } catch (err) {
+                console.error('[Builder Init Error]', err);
+                if (editSubdomain) toast.error('获取原有网页信息失败');
             } finally {
                 setInitialLoading(false);
             }
@@ -123,8 +136,11 @@ export default function Builder() {
         setSelected(found);
         setFieldValues({});
         setResult(null);
-        if (found) navigate(`/builder/${found.name}`, { replace: true });
-        else navigate('/builder', { replace: true });
+        
+        // Preserve edit mode if active
+        const query = editSubdomain ? `?edit=${editSubdomain}` : '';
+        if (found) navigate(`/builder/${found.name}${query}`, { replace: true });
+        else navigate(`/builder${query}`, { replace: true });
     }
 
     async function pollReachability(url, maxRetries = 10) {

@@ -52,7 +52,10 @@ function TemplateCard({ t }) {
                 <p className="tmpl-card__desc">
                     {t.static
                         ? '固定款式（纯视觉体验，内容无需修改）'
-                        : `你可以修改的内容：${(t.fields ?? []).map(f => FIELD_LABELS[f] || f).join('、') || '无'}`}
+                        : `你可以修改的内容：${(t.fields ?? []).map(f => {
+                            if (typeof f === 'string') return FIELD_LABELS[f] || f;
+                            return f.label || f.id || f.key || '未知字段';
+                        }).join('、') || '无'}`}
                 </p>
                 <div style={{ marginTop: '0.6rem' }}>
                     {/* 版本号已隐藏 */}

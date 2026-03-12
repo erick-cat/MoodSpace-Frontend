@@ -65,7 +65,11 @@ export default function Builder() {
         if (!selectedTemplate.static && selectedTemplate.fields) {
             const initialVals = {};
             selectedTemplate.fields.forEach(f => {
-                initialVals[f] = DEFAULT_VALUES[f] || '';
+                const key = typeof f === 'string' ? f : (f.id || f.key);
+                const defaultValue = typeof f === 'string' 
+                    ? (DEFAULT_VALUES[f] || '') 
+                    : (f.default !== undefined ? f.default : (DEFAULT_VALUES[key] || ''));
+                initialVals[key] = defaultValue;
             });
             setFieldValues(initialVals);
         } else {
@@ -229,18 +233,37 @@ export default function Builder() {
                                 <>
                                     <hr className="builder-divider" />
                                     <p className="builder-section-label">📝 填入你们的专属内容</p>
-                                    {selectedTemplate.fields.map((key) => (
-                                        <div className="form-group" key={key}>
-                                            <label htmlFor={`f-${key}`}>{FIELD_LABELS[key] || key}</label>
-                                            <textarea
-                                                id={`f-${key}`}
-                                                rows={key === 'paragraphs' ? 4 : 2}
-                                                value={fieldValues[key] ?? ''}
-                                                onChange={(e) => setFieldValues((p) => ({ ...p, [key]: e.target.value }))}
-                                                placeholder={`请输入 ${FIELD_LABELS[key] || key}`}
-                                            />
-                                        </div>
-                                    ))}
+                                    {selectedTemplate.fields.map((f) => {
+                                        const key = typeof f === 'string' ? f : (f.id || f.key);
+                                        const label = typeof f === 'string' ? (FIELD_LABELS[f] || f) : (f.label || f.id || f.key);
+                                        const placeholder = typeof f === 'string' 
+                                            ? (`请输入 ${FIELD_LABELS[f] || f}`) 
+                                            : (f.placeholder || `请输入 ${label}`);
+                                        const inputType = typeof f === 'string' ? 'textarea' : (f.type || 'text');
+
+                                        return (
+                                            <div className="form-group" key={key}>
+                                                <label htmlFor={`f-${key}`}>{label}</label>
+                                                {inputType === 'textarea' ? (
+                                                    <textarea
+                                                        id={`f-${key}`}
+                                                        rows={key === 'paragraphs' ? 4 : 2}
+                                                        value={fieldValues[key] ?? ''}
+                                                        onChange={(e) => setFieldValues((p) => ({ ...p, [key]: e.target.value }))}
+                                                        placeholder={placeholder}
+                                                    />
+                                                ) : (
+                                                    <input
+                                                        id={`f-${key}`}
+                                                        type="text"
+                                                        value={fieldValues[key] ?? ''}
+                                                        onChange={(e) => setFieldValues((p) => ({ ...p, [key]: e.target.value }))}
+                                                        placeholder={placeholder}
+                                                    />
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </>
                             )}
 

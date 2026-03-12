@@ -119,7 +119,15 @@ export default function Builder() {
     let previewHtml = '';
     if (rawHtml && selectedTemplate) {
         const baseTag = `<base href="https://www.885201314.xyz/assets/${selectedTemplate.name}/" />`;
-        previewHtml = rawHtml.replace('<head>', `<head>\n  ${baseTag}`);
+        
+        // Robust injection: find <head> case-insensitive, or prepend if missing
+        const headRegex = /<head[^>]*>/i;
+        if (headRegex.test(rawHtml)) {
+            previewHtml = rawHtml.replace(headRegex, (match) => `${match}\n  ${baseTag}`);
+        } else {
+            previewHtml = `${baseTag}\n${rawHtml}`;
+        }
+
         previewHtml = previewHtml.replace(/\{\{([^}]+)\}\}/g, (match, key) => {
             const k = key.trim();
             if (fieldValues[k] !== undefined && fieldValues[k] !== '') return fieldValues[k];

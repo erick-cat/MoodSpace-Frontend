@@ -1,14 +1,26 @@
 import { Suspense, lazy } from 'react';
-import { Routes, Route, NavLink } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+import { Routes, Route, NavLink, useNavigate } from 'react-router-dom';
+import { Toaster, toast } from 'react-hot-toast';
+import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 
 // Code-split all pages: only load the chunk for the current route
 const Home = lazy(() => import('./pages/Home.jsx'));
 const Gallery = lazy(() => import('./pages/Gallery.jsx'));
 const Builder = lazy(() => import('./pages/Builder.jsx'));
 const Admin = lazy(() => import('./pages/Admin.jsx'));
+const Auth = lazy(() => import('./pages/Auth.jsx'));
+const MySpace = lazy(() => import('./pages/MySpace.jsx'));
 
 function Navbar() {
+    const { user, profile, signOut } = useAuth();
+    const navigate = useNavigate();
+
+    async function handleSignOut() {
+        await signOut();
+        toast.success('已退出登录');
+        navigate('/');
+    }
+
     return (
         <nav className="navbar">
             <div className="navbar__inner">
@@ -20,13 +32,30 @@ function Navbar() {
                     <NavLink to="/builder" className={({ isActive }) => isActive ? 'active' : ''}>
                         创建页面
                     </NavLink>
+                    {user ? (
+                        <>
+                            <NavLink to="/my-space" className={({ isActive }) => isActive ? 'active' : ''} id="nav-myspace">
+                                {profile?.display_name ?? '我的空间'}
+                            </NavLink>
+                            <button
+                                id="nav-signout"
+                                onClick={handleSignOut}
+                                className="navbar__btn-link"
+                            >
+                                退出
+                            </button>
+                        </>
+                    ) : (
+                        <NavLink to="/auth" className={({ isActive }) => isActive ? 'active' : ''} id="nav-login">
+                            登录 / 注册
+                        </NavLink>
+                    )}
                 </div>
             </div>
         </nav>
     );
 }
 
-// Full-screen spinner shown while a lazy chunk is loading
 function PageLoader() {
     return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
@@ -37,8 +66,7 @@ function PageLoader() {
 
 export default function App() {
     return (
-        <>
-            {/* Global toast notification container — used by react-hot-toast */}
+        <AuthProvider>
             <Toaster
                 position="top-center"
                 toastOptions={{
@@ -61,8 +89,10 @@ export default function App() {
                     <Route path="/builder" element={<Builder />} />
                     <Route path="/builder/:templateName" element={<Builder />} />
                     <Route path="/admin/upload" element={<Admin />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/my-space" element={<MySpace />} />
                 </Routes>
             </Suspense>
-        </>
+        </AuthProvider>
     );
 }

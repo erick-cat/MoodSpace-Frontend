@@ -1,17 +1,14 @@
-// If VITE_API_BASE_URL is not set (i.e. Production on VPS), use relative path
+import { supabase } from '../lib/supabase.js';
+
 const BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
-/** 
- * Temporary helper to identity a user across sessions until real Auth is added.
- * Stores a random UUID in localStorage.
+/**
+ * Gets the current authenticated user's ID.
+ * Returns null if not logged in.
  */
-function getUserId() {
-    let id = localStorage.getItem('rs_user_id');
-    if (!id) {
-        id = crypto.randomUUID();
-        localStorage.setItem('rs_user_id', id);
-    }
-    return id;
+async function getUserId() {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.user?.id ?? null;
 }
 
 async function apiFetch(path, options = {}) {
@@ -24,7 +21,7 @@ async function apiFetch(path, options = {}) {
         let msg = `HTTP ${res.status}`;
         try {
             const body = await res.json();
-            msg = body.error ?? msg;
+            msg = body.message ?? body.error ?? msg;
         } catch { /* ignore */ }
         throw new Error(msg);
     }
@@ -40,16 +37,14 @@ export async function listTemplates() {
 
 /**
  * Render (create/update) a user project page.
- * Public endpoint — accessible by end users, no admin key needed.
+ * Requires user to be logged in — userId is taken from Supabase session.
  */
 export async function renderProject(payload) {
+    const userId = await getUserId();
     return apiFetch('/api/project/render', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            userId: getUserId(), // Automatically attach the unique user ID
-            ...payload
-        }),
+        body: JSON.stringify({ userId, ...payload }),
     });
 }
 

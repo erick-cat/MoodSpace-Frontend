@@ -415,3 +415,233 @@ body {
     justify-content: flex-end;
     margin-top: 0.5rem;
 }
+
+/* ── Auth Page ────────────────────────────────────────────────────────────── */
+.auth-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 2.5rem 2rem;
+    max-width: 420px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.auth-logo {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.auth-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--dark);
+    margin-bottom: 0.3rem;
+}
+
+.auth-sub {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.auth-tabs {
+    display: flex;
+    border-bottom: 2px solid #f0e0e8;
+    margin-bottom: 1.5rem;
+}
+
+.auth-tab {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 0.6rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all var(--ease);
+    font-family: var(--font);
+}
+
+.auth-tab.active {
+    color: var(--pink);
+    border-bottom-color: var(--pink);
+}
+
+.auth-submit {
+    width: 100%;
+    justify-content: center;
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+}
+
+.auth-disclaimer {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-align: left;
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+}
+
+.auth-footer-link {
+    margin-top: 1.25rem;
+    font-size: 0.85rem;
+}
+.auth-footer-link a {
+    color: var(--pink);
+    text-decoration: none;
+}
+
+/* ── Navbar button-style link ─────────────────────────────────────────────── */
+.navbar__btn-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: var(--font);
+    transition: color var(--ease);
+}
+.navbar__btn-link:hover {
+    color: var(--pink);
+}
+
+/* ── MySpace Page ─────────────────────────────────────────────────────────── */
+.myspace-profile-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.myspace-avatar {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--pink) 0%, #e879a0 100%);
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.myspace-profile-info {
+    flex: 1;
+}
+
+.myspace-username {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 0.2rem;
+}
+
+.myspace-tier {
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.myspace-section-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.myspace-section-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 0.75rem;
+}
+
+.myspace-section-desc {
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+}
+
+.myspace-invite-box {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #f8fafc;
+    border: 1.5px solid #e0d0d8;
+    border-radius: 8px;
+    padding: 0.65rem 1rem;
+}
+
+.myspace-invite-code {
+    flex: 1;
+    font-family: monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--dark);
+}
+
+.myspace-projects-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.myspace-project-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1rem;
+    border: 1.5px solid #f0e0e8;
+    border-radius: 10px;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.myspace-project-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.myspace-project-domain {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--dark);
+}
+
+.myspace-project-meta {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+.myspace-project-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.myspace-upgrade-hint {
+    background: linear-gradient(135deg, #fff0f5 0%, #f0f7ff 100%);
+    border: 1.5px solid #f0e0e8;
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    font-size: 0.88rem;
+    color: var(--mid);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}

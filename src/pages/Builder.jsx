@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { listTemplates, renderProject } from '../api/client.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const BASE_DOMAIN = '885201314.xyz';
 
 export default function Builder() {
     const { templateName } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     const [templates, setTemplates] = useState([]);
     const [selectedTemplate, setSelected] = useState(null);
@@ -71,6 +73,13 @@ export default function Builder() {
         if (!selectedTemplate) return toast.error('请选择一个模板');
         if (!subdomain) return toast.error('请填写子域名');
 
+        // Guard: require login to publish
+        if (!user) {
+            toast.error('请先登录后再发布网页 🔑');
+            navigate('/auth');
+            return;
+        }
+
         setLoading(true);
         const toastId = toast.loading('正在全网生成中...');
         try {
@@ -109,7 +118,7 @@ export default function Builder() {
     // --- BSR Real-time Preview Generation ---
     let previewHtml = '';
     if (rawHtml && selectedTemplate) {
-        const baseTag = `<base href="https://romancespace.885201314.xyz/assets/${selectedTemplate.name}/" />`;
+        const baseTag = `<base href="https://www.885201314.xyz/assets/${selectedTemplate.name}/" />`;
         previewHtml = rawHtml.replace('<head>', `<head>\n  ${baseTag}`);
         previewHtml = previewHtml.replace(/\{\{([^}]+)\}\}/g, (match, key) => {
             const k = key.trim();

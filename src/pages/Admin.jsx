@@ -7,9 +7,20 @@ export default function Admin() {
     const [files, setFiles] = useState([]);
     const [detectedTitle, setDetectedTitle] = useState('');
 
-    const [loading, setLoading] = useState(false);
+    const [loadingUpload, setLoadingUpload] = useState(false);
+    const [loadingSync, setLoadingSync] = useState(false);
+    const [loadingKV, setLoadingKV] = useState(null); // 'quotas' | 'blocklist' | null
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
+
+    const getErrorMessage = (err) => {
+        const msg = err.message || String(err);
+        if (msg.includes('templateName must contain')) return '模板英文名格式错误：仅限小写字母、数字或下划线';
+        if (msg.includes('index.html is required')) return '核心文件缺失：必须包含 index.html';
+        if (msg.includes('Invalid admin key') || msg.includes('401') || msg.includes('403')) return '同步失败：管理员密钥无效或权限不足';
+        if (msg.includes('Failed to fetch')) return '网络错误：无法连接到 API 服务器，请检查网络或后端状态';
+        return msg;
+    };
 
     // Initialize admin key from local storage with 24-hour expiration
     useEffect(() => {
@@ -104,7 +115,7 @@ export default function Admin() {
             formData.append(file.name, file);
         });
 
-        setLoading(true);
+        setLoadingUpload(true);
         try {
             const res = await uploadTemplate(formData, adminKey);
             setSuccess(`模板 ${res.title || res.templateName} (${res.version}) 上传成功！`);
@@ -112,9 +123,9 @@ export default function Admin() {
             setTemplateName('');
             setDetectedTitle('');
         } catch (err) {
-            setError(err.message);
+            setError(getErrorMessage(err));
         } finally {
-            setLoading(false);
+            setLoadingUpload(false);
         }
     };
 
@@ -122,16 +133,15 @@ export default function Admin() {
         if (!adminKey) return setError('请输入管理员密钥');
         setError(null);
         setSuccess(null);
-        setLoading(true);
+        setLoadingSync(true);
         saveAdminKey(adminKey);
-        
         try {
             const res = await syncTemplates(adminKey);
-            setSuccess(`同步成功！共推送了 ${res.count} 个本地模板到 R2 和 KV。`);
+            setSuccess(`同步成功！共推送了 ${res.count} 个本地模板到云端。`);
         } catch (err) {
-            setError('同步失败: ' + err.message);
+            setError('同步操作失败: ' + getErrorMessage(err));
         } finally {
-            setLoading(false);
+            setLoadingSync(false);
         }
     };
 
@@ -139,7 +149,7 @@ export default function Admin() {
         if (!adminKey) return setError('请输入管理员密钥');
         setError(null);
         setSuccess(null);
-        setLoading(true);
+        setLoadingKV(type);
         // Save key with timestamp
         saveAdminKey(adminKey);
         
@@ -152,9 +162,9 @@ export default function Admin() {
                 setSuccess(`黑名单同步成功：${res.message} (当前条数: ${res.count})`);
             }
         } catch (err) {
-            setError(`${type === 'quotas' ? '配额' : '黑名单'}同步失败: ` + err.message);
+            setError(`${type === 'quotas' ? '配额' : '黑名单'}刷新失败: ` + getErrorMessage(err));
         } finally {
-            setLoading(false);
+            setLoadingKV(null);
         }
     };
 
@@ -168,7 +178,7 @@ export default function Admin() {
 
             <form onSubmit={handleSubmit} className="builder-card">
                 <div className="form-group">
-                    <label htmlFor="adminKey">🔑 超管密钥 (X-Admin-Key)</label>
+                    <label htmlFor="adminKey">🔑 超级管理员密钥</label>
                     <input
                         id="adminKey"
                         type="password"
@@ -188,7 +198,7 @@ export default function Admin() {
                         type="text"
                         value={templateName}
                         onChange={(e) => setTemplateName(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                        placeholder="e.g. love_card_v2"
+                        placeholder="例如：love_letter_v1"
                         required
                     />
                     <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
@@ -250,27 +260,27 @@ export default function Admin() {
                 </div>
 
                 <div className="builder-submit" style={{ marginTop: '1.5rem', display: 'flex', gap: '10px' }}>
-                    <button type="submit" className="btn btn--primary" style={{ flex: 2, justifyContent: 'center' }} disabled={loading}>
-                        {loading ? '发布中...' : '🚀 一键提交选中文件'}
+                    <button type="submit" className="btn btn--primary" style={{ flex: 2, justifyContent: 'center' }} disabled={loadingUpload || loadingSync}>
+                        {loadingUpload ? '正在发版...' : '🚀 增量上传 (本地 -> 仓库)'}
                     </button>
-                    <button type="button" onClick={handleSync} className="btn" style={{ flex: 1, justifyContent: 'center', background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0' }} disabled={loading}>
-                        {loading ? '计算中...' : '🔄 同步本地全量模板'}
+                    <button type="button" onClick={handleSync} className="btn" style={{ flex: 1, justifyContent: 'center', background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0' }} disabled={loadingUpload || loadingSync}>
+                        {loadingSync ? '正在同步...' : '🔄 云端全量同步'}
                     </button>
                 </div>
             </form>
             
             <div className="note" style={{ marginTop: '20px', fontSize: '0.85rem' }}>
-                <strong>💡 两种上传方式说明：</strong>
+                <strong>💡 核心操作说明：</strong>
                 <ul style={{ marginTop: '5px', paddingLeft: '20px' }}>
-                    <li><strong>手动模式</strong>：适合你在电脑上选好文件，上传一个全新的或临时的模板。</li>
-                    <li><strong>全量同步</strong>：后端会自动扫描 <code>RomanceSpace-Templates/src</code> 目录，将里面所有的文件夹一次性推送到 R2 和 KV。适合你刚更新完代码，想让云端数据立刻整齐划一。</li>
+                    <li><strong>增量上传</strong>：将本地选中的模板文件上传并备份至 GitHub，适用于新增或修复特定模板。</li>
+                    <li><strong>全量同步</strong>：以 GitHub 仓库为唯一“真理源”，强制刷新 R2 和 KV 数据，确保全平台数据对齐。</li>
                 </ul>
             </div>
 
             <div className="builder-card" style={{ marginTop: '20px', border: '1px var(--primary-light) solid' }}>
-                <h3 style={{ fontSize: '1rem', marginBottom: '10px', color: 'var(--primary-dark)' }}>⚙️ 系统配置同步 (Cloudflare KV → VPS)</h3>
+                <h3 style={{ fontSize: '1rem', marginBottom: '10px', color: 'var(--primary-dark)' }}>⚙️ 边缘同步与缓存刷新</h3>
                 <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '15px' }}>
-                    当您在 Cloudflare 后台手动修改了 KV 值（如配额、会员标签或黑名单）时，点击下方按钮强制 VPS 更新内存缓存。
+                    如果您在 Cloudflare 控制台直接修改了 KV 值（如配额、黑名单等），请点击下方按钮强制更新服务器缓存。
                 </p>
                 <div style={{ display: 'flex', gap: '10px' }}>
                     <button 
@@ -278,18 +288,18 @@ export default function Admin() {
                         onClick={() => handleRefreshKV('quotas')} 
                         className="btn btn--sm" 
                         style={{ flex: 1, background: '#fff', border: '1px solid #d1d5db', color: '#374151' }}
-                        disabled={loading}
+                        disabled={loadingKV !== null}
                     >
-                        {loading ? '同步中...' : '🔄 同步会员等级/配额'}
+                        {loadingKV === 'quotas' ? '同步中...' : '🔄 同步会员等级/配额'}
                     </button>
                     <button 
                         type="button" 
                         onClick={() => handleRefreshKV('blocklist')} 
                         className="btn btn--sm" 
                         style={{ flex: 1, background: '#fff', border: '1px solid #d1d5db', color: '#374151' }}
-                        disabled={loading}
+                        disabled={loadingKV !== null}
                     >
-                        {loading ? '同步中...' : '🚫 同步域名黑名单'}
+                        {loadingKV === 'blocklist' ? '同步中...' : '🚫 同步域名黑名单'}
                     </button>
                 </div>
             </div>

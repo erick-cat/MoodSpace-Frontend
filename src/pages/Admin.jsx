@@ -402,11 +402,11 @@ export default function Admin() {
                     {Object.keys(tiers).map(t => (
                         <div key={t} style={{ 
                             padding: '12px', 
-                            background: currentTier === t.toLowerCase() ? 'var(--primary-dark)' : '#fff', 
+                            background: currentTier === t.toLowerCase() ? '#059669' : '#fff', 
                             color: currentTier === t.toLowerCase() ? '#fff' : 'inherit',
                             border: currentTier === t.toLowerCase() ? 'none' : '1px solid #e2e8f0', 
                             borderRadius: '10px',
-                            boxShadow: currentTier === t.toLowerCase() ? '0 8px 16px rgba(214, 51, 108, 0.25)' : 'none',
+                            boxShadow: currentTier === t.toLowerCase() ? '0 8px 16px rgba(5, 150, 105, 0.25)' : 'none',
                             display: 'flex',
                             flexDirection: 'column',
                             gap: '8px',
@@ -419,7 +419,7 @@ export default function Admin() {
                                     top: '-10px', 
                                     right: '10px', 
                                     background: '#fff', 
-                                    color: 'var(--primary-dark)', 
+                                    color: '#059669', 
                                     fontSize: '0.65rem', 
                                     padding: '2px 8px', 
                                     borderRadius: '4px',

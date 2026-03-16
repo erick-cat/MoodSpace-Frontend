@@ -288,9 +288,17 @@ export default function Builder() {
                                     >
                                         <option value="">-- 请先选择模板 --</option>
                                         {templates.map((t) => (
-                                            <option key={t.name} value={t.name}>{t.title || t.name}</option>
+                                            <option key={t.name} value={t.name}>
+                                                {t.tier === 'pro' ? '[PRO] ' : ''}{t.title || t.name}
+                                            </option>
                                         ))}
                                     </select>
+                                    {selectedTemplate?.price > 0 && (
+                                        <div style={{ marginTop: '8px', padding: '8px 12px', background: 'var(--primary-light)', borderRadius: '8px', border: '1px dashed var(--primary-dark)', fontSize: '0.75rem', color: 'var(--primary-dark)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span>💎 <strong>单独买断价格:</strong> ¥{selectedTemplate.price}</span>
+                                            <span style={{ opacity: 0.6, fontSize: '0.65rem' }}>暂未开放支付</span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Subdomain */}

@@ -402,32 +402,43 @@ export default function Admin() {
                     {Object.keys(tiers).map(t => (
                         <div key={t} style={{ 
                             padding: '12px', 
-                            background: currentTier === t.toLowerCase() ? 'var(--primary-light)' : '#fff', 
-                            border: currentTier === t.toLowerCase() ? '2px solid var(--primary-dark)' : '1px solid #e2e8f0', 
+                            background: currentTier === t.toLowerCase() ? 'var(--primary-dark)' : '#fff', 
+                            color: currentTier === t.toLowerCase() ? '#fff' : 'inherit',
+                            border: currentTier === t.toLowerCase() ? 'none' : '1px solid #e2e8f0', 
                             borderRadius: '10px',
-                            boxShadow: currentTier === t.toLowerCase() ? '0 4px 12px rgba(214, 51, 108, 0.15)' : 'none',
+                            boxShadow: currentTier === t.toLowerCase() ? '0 8px 16px rgba(214, 51, 108, 0.25)' : 'none',
                             display: 'flex',
                             flexDirection: 'column',
                             gap: '8px',
-                            position: 'relative'
+                            position: 'relative',
+                            transition: 'all 0.3s ease'
                         }}>
                             {currentTier === t.toLowerCase() && (
                                 <span style={{ 
                                     position: 'absolute', 
                                     top: '-10px', 
                                     right: '10px', 
-                                    background: 'var(--primary-dark)', 
-                                    color: '#fff', 
+                                    background: '#fff', 
+                                    color: 'var(--primary-dark)', 
                                     fontSize: '0.65rem', 
-                                    padding: '2px 6px', 
+                                    padding: '2px 8px', 
                                     borderRadius: '4px',
-                                    fontWeight: 600
-                                }}>当前</span>
+                                    fontWeight: 800,
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                }}>ACTIVE</span>
                             )}
-                            <div style={{ fontWeight: 600, color: 'var(--primary-dark)', fontSize: '0.9rem' }}>
+                            <div style={{ 
+                                fontWeight: 600, 
+                                color: currentTier === t.toLowerCase() ? '#fff' : 'var(--primary-dark)', 
+                                fontSize: '0.95rem' 
+                            }}>
                                 {tiers[t].label || t.toUpperCase()}
                             </div>
-                            <div style={{ fontSize: '0.75rem', color: '#64748b', lineHeight: '1.4' }}>
+                            <div style={{ 
+                                fontSize: '0.75rem', 
+                                color: currentTier === t.toLowerCase() ? 'rgba(255,255,255,0.9)' : '#64748b', 
+                                lineHeight: '1.4' 
+                            }}>
                                 📁 项目额度: <strong>{tiers[t].limit}</strong><br/>
                                 ✍️ 每日编辑: <strong>{tiers[t].dailyLimit}</strong><br/>
                                 🌐 最短域名: <strong>{tiers[t].minDomainLen} 字</strong>
@@ -440,14 +451,15 @@ export default function Admin() {
                                     width: '100%', 
                                     padding: '6px',
                                     marginTop: '5px',
-                                    background: 'var(--primary-light)', 
-                                    color: 'var(--primary-dark)',
+                                    background: currentTier === t.toLowerCase() ? 'rgba(255,255,255,0.2)' : 'var(--primary-light)', 
+                                    color: currentTier === t.toLowerCase() ? '#fff' : 'var(--primary-dark)',
                                     border: 'none',
-                                    fontSize: '0.75rem'
+                                    fontSize: '0.75rem',
+                                    fontWeight: 600
                                 }}
-                                disabled={loadingTier}
+                                disabled={loadingTier || currentTier === t.toLowerCase()}
                             >
-                                {loadingTier ? '...' : '切换至该等级'}
+                                {loadingTier ? '...' : currentTier === t.toLowerCase() ? '当前生效中' : '切换至该等级'}
                             </button>
                         </div>
                     ))}

@@ -6,7 +6,6 @@ export default function Admin() {
     const [templateName, setTemplateName] = useState('');
     const [files, setFiles] = useState([]);
     const [detectedTitle, setDetectedTitle] = useState('');
-    const [syncToGithub, setSyncToGithub] = useState(true);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -100,7 +99,7 @@ export default function Admin() {
 
         const formData = new FormData();
         formData.append('templateName', templateName);
-        formData.append('syncToGithub', syncToGithub);
+        formData.append('syncToGithub', 'true'); // Mandatory sync
         files.forEach(file => {
             formData.append(file.name, file);
         });
@@ -244,17 +243,10 @@ export default function Admin() {
                     )}
                 </div>
 
-                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
-                    <input
-                        id="syncToGithub"
-                        type="checkbox"
-                        checked={syncToGithub}
-                        onChange={(e) => setSyncToGithub(e.target.checked)}
-                        style={{ cursor: 'pointer', width: 'auto' }}
-                    />
-                    <label htmlFor="syncToGithub" style={{ cursor: 'pointer', margin: 0, fontSize: '0.9rem', color: '#166534', fontWeight: 600 }}>
-                        🚀 同时自动推送到 GitHub 模板仓库 (生产发布必选)
-                    </label>
+                <div className="form-group" style={{ marginBottom: '1rem', padding: '10px', background: '#f0fdf4', borderRadius: '6px', border: '1px solid #bdf4c9' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#166534', fontWeight: 600 }}>
+                        🚀 自动同步已开启：所有文件将同步更新至 GitHub 模板仓库
+                    </div>
                 </div>
 
                 <div className="builder-submit" style={{ marginTop: '1.5rem', display: 'flex', gap: '10px' }}>

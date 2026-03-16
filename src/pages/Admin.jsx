@@ -69,7 +69,7 @@ export default function Admin() {
                     .select('tier')
                     .eq('id', data.session.user.id)
                     .single();
-                if (profile) setCurrentTier(profile.tier);
+                if (profile) setCurrentTier(profile.tier?.toLowerCase() || 'free');
             }
         };
 
@@ -402,9 +402,10 @@ export default function Admin() {
                     {Object.keys(tiers).map(t => (
                         <div key={t} style={{ 
                             padding: '12px', 
-                            background: '#fff', 
+                            background: currentTier === t.toLowerCase() ? 'var(--primary-light)' : '#fff', 
                             border: currentTier === t.toLowerCase() ? '2px solid var(--primary-dark)' : '1px solid #e2e8f0', 
                             borderRadius: '10px',
+                            boxShadow: currentTier === t.toLowerCase() ? '0 4px 12px rgba(214, 51, 108, 0.15)' : 'none',
                             display: 'flex',
                             flexDirection: 'column',
                             gap: '8px',

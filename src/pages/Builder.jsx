@@ -279,7 +279,7 @@ export default function Builder() {
                                     >
                                         <option value="">-- 请先选择模板 --</option>
                                         {templates.map((t) => (
-                                            <option key={t.name} value={t.name}>{t.name}</option>
+                                            <option key={t.name} value={t.name}>{t.title || t.name}</option>
                                         ))}
                                     </select>
                                 </div>

@@ -48,7 +48,7 @@ function TemplateCard({ t }) {
     return (
         <div className="card tmpl-card">
             <div>
-                <p className="tmpl-card__title">📦 模板代码：{t.name}</p>
+                <p className="tmpl-card__title">📦 {t.title || t.name}</p>
                 <p className="tmpl-card__desc">
                     {t.static
                         ? '固定模板（无需修改内容）'

@@ -115,6 +115,14 @@ export async function syncTemplates(adminKey) {
     });
 }
 
+/** Prune orphaned R2 versions and data — admin only. */
+export async function pruneTemplates(adminKey) {
+    return apiFetch('/api/template/prune', {
+        method: 'POST',
+        headers: { 'X-Admin-Key': adminKey },
+    });
+}
+
 /** Update a specific user's tier — admin only. */
 export async function updateUserTier(targetUserId, tier, adminKey) {
     return apiFetch('/api/project/config/update-user-tier', {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { uploadTemplate, syncTemplates, refreshQuotas, refreshBlocklist, updateUserTier, getTiers, getSyncStatus, listTemplates } from '../api/client.js';
+import { uploadTemplate, syncTemplates, pruneTemplates, refreshQuotas, refreshBlocklist, updateUserTier, getTiers, getSyncStatus, listTemplates } from '../api/client.js';
 import { supabase } from '../lib/supabase.js';
 
 export default function Admin() {
@@ -16,6 +16,7 @@ export default function Admin() {
     const [loadingBlocklist, setLoadingBlocklist] = useState(false);
     const [loadingTier, setLoadingTier] = useState(false);
     const [loadingCheck, setLoadingCheck] = useState(false);
+    const [loadingPrune, setLoadingPrune] = useState(false);
     const [userId, setUserId] = useState(null);
     const [currentTier, setCurrentTier] = useState(null);
     const [tiers, setTiers] = useState({});
@@ -255,11 +256,35 @@ export default function Admin() {
         saveAdminKey(adminKey);
         try {
             const res = await syncTemplates(adminKey);
-            setMsg(prev => ({ ...prev, upload: { success: `同步成功！共推送了 ${res.count} 个本地模板到云端。`, error: null } }));
+            let successMsg = `同步成功！共推送了 ${res.count} 个本地模板到云端。`;
+            if (res.purgedCount > 0) {
+                successMsg += ` 同时清理了 ${res.purgedCount} 个已在 Git 中删除的无效模板。`;
+            }
+            setMsg(prev => ({ ...prev, upload: { success: successMsg, error: null } }));
+            fetchCurrentTemplates();
         } catch (err) {
             setMsg(prev => ({ ...prev, upload: { error: '同步操作失败: ' + getErrorMessage(err), success: null } }));
         } finally {
             setLoadingSync(false);
+        }
+    };
+
+    const handlePrune = async () => {
+        if (!adminKey) return setMsg(prev => ({ ...prev, main: { error: '请输入管理员密钥' } }));
+        
+        const confirmed = window.confirm('⚠️ 警告：存储深度清理将永久删除 R2 中所有“非活跃”版本的文件。\n\n这包括：\n1. 已上传但未被当前 KV 记录使用的旧版本文件\n2. 已被删除模板残留的碎片文件\n\n该操作无法撤销。是否继续？');
+        if (!confirmed) return;
+
+        clearMsgs();
+        setLoadingPrune(true);
+        saveAdminKey(adminKey);
+        try {
+            const res = await pruneTemplates(adminKey);
+            setMsg(prev => ({ ...prev, main: { success: `存储清理完成！共删除了 ${res.objectsDeleted} 个残留对象，涉及 ${res.templatesPruned?.length || 0} 个目录。`, error: null } }));
+        } catch (err) {
+            setMsg(prev => ({ ...prev, main: { error: '清理失败: ' + getErrorMessage(err), success: null } }));
+        } finally {
+            setLoadingPrune(false);
         }
     };
 
@@ -483,6 +508,27 @@ export default function Admin() {
                             >
                                 {loadingBlocklist ? '同步中...' : syncWarnings.blocklist ? '⚡ 刷新黑名单' : '🚫 名单已同步'}
                             </button>
+                        </div>
+                        <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid #f1f5f9' }}>
+                            <button 
+                                type="button" 
+                                onClick={handlePrune} 
+                                className="btn btn--sm" 
+                                style={{ 
+                                    width: '100%',
+                                    background: '#fef2f2', 
+                                    border: '1px solid #fecaca', 
+                                    color: '#dc2626',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 600
+                                }}
+                                disabled={loadingPrune}
+                            >
+                                {loadingPrune ? '正在深度清理...' : '🧹 深度清理 R2 存储 (残留版本)'}
+                            </button>
+                            <p style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '6px', textAlign: 'center' }}>
+                                * 彻底移除 R2 中不再被 KV 使用的旧版本和僵尸文件
+                            </p>
                         </div>
                         {msg.kv.error && <div className="alert alert--error" style={{ marginTop: '1.5rem', marginBottom: 0 }}>{msg.kv.error}</div>}
                         {msg.kv.success && <div className="alert alert--success" style={{ marginTop: '1.5rem', marginBottom: 0 }}>{msg.kv.success}</div>}

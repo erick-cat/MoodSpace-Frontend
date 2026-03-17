@@ -75,7 +75,7 @@ export async function renderProject(payload) {
  */
 export async function getUserStatus(userId) {
     if (!userId) return null;
-    return apiFetch(`/api/project/status/${userId}`);
+    return apiFetch(`/api/project/status/${userId}?t=${Date.now()}`);
 }
 
 /** Get all membership tiers and their configurations. */

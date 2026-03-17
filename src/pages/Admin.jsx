@@ -18,8 +18,19 @@ export default function Admin() {
     const [currentTier, setCurrentTier] = useState(null);
     const [tiers, setTiers] = useState({});
     const [syncWarnings, setSyncWarnings] = useState({ quotas: false, blocklist: false });
-    const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(null);
+    const [msg, setMsg] = useState({
+        main: { error: null, success: null },
+        upload: { error: null, success: null },
+        tier: { error: null, success: null },
+        kv: { error: null, success: null }
+    });
+
+    const clearMsgs = () => setMsg({
+        main: { error: null, success: null },
+        upload: { error: null, success: null },
+        tier: { error: null, success: null },
+        kv: { error: null, success: null }
+    });
 
     const getErrorMessage = (err) => {
         const msg = err.message || String(err);
@@ -83,17 +94,17 @@ export default function Admin() {
             const res = await getTiers();
             setTiers(res.tiers);
             localStorage.setItem('rs_tiers_config', JSON.stringify(res.tiers));
-            setSuccess('等级列表已从 VPS 实时获取并更新本地缓存。');
+            setMsg(prev => ({ ...prev, tier: { success: '等级列表已从 VPS 实时获取并更新本地缓存。', error: null } }));
         } catch (err) {
-            setError('获取等级失败: ' + getErrorMessage(err));
+            setMsg(prev => ({ ...prev, tier: { error: '获取等级失败: ' + getErrorMessage(err), success: null } }));
         } finally {
             setLoadingTier(false);
         }
     };
 
     const handleCheckSync = async () => {
-        if (!adminKey) return setError('请输入管理员密钥');
-        setError(null);
+        if (!adminKey) return setMsg(prev => ({ ...prev, main: { error: '请输入管理员密钥' } }));
+        clearMsgs();
         setLoadingCheck(true);
         saveAdminKey(adminKey);
 
@@ -104,12 +115,12 @@ export default function Admin() {
                 blocklist: !res.blocklistSynced
             });
             if (res.isSynced) {
-                setSuccess('✅ 经校验，VPS 内存数据与云端 KV 完全同步。');
+                setMsg(prev => ({ ...prev, main: { success: '✅ 经校验，VPS 内存数据与云端 KV 完全同步。' } }));
             } else {
-                setError('⚠️ 检测到云端 KV 有更新，请执行同步操作。');
+                setMsg(prev => ({ ...prev, main: { error: '⚠️ 检测到云端 KV 有更新，请执行同步操作。' } }));
             }
         } catch (err) {
-            setError('同步校验失败: ' + getErrorMessage(err));
+            setMsg(prev => ({ ...prev, main: { error: '同步校验失败: ' + getErrorMessage(err) } }));
         } finally {
             setLoadingCheck(false);
         }
@@ -142,41 +153,40 @@ export default function Admin() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(null);
-        setSuccess(null);
+        clearMsgs();
 
-        if (!adminKey) return setError('请输入管理员密钥');
-        if (!templateName) return setError('请输入模板英文名称');
+        if (!adminKey) return setMsg(prev => ({ ...prev, upload: { error: '请输入管理员密钥' } }));
+        if (!templateName) return setMsg(prev => ({ ...prev, upload: { error: '请输入模板英文名称' } }));
         
         // 1. Basic format check for template name
         if (!/^[a-z0-9_]+$/.test(templateName)) {
-            return setError('模板英文名不符合规范：仅限小写字母、数字和下划线');
+            return setMsg(prev => ({ ...prev, upload: { error: '模板英文名不符合规范：仅限小写字母、数字和下划线' } }));
         }
 
-        if (files.length === 0) return setError('请至少选择一个文件');
+        if (files.length === 0) return setMsg(prev => ({ ...prev, upload: { error: '请至少选择一个文件' } }));
 
         // 2. Check for mandatory files
         const hasIndex = files.some(f => f.name === 'index.html');
         const configFile = files.find(f => f.name === 'config.json' || f.name === 'schema.json');
         
-        if (!hasIndex) return setError('缺少核心文件：index.html');
-        if (!configFile) return setError('缺少配置文件：config.json');
+        if (!hasIndex) return setMsg(prev => ({ ...prev, upload: { error: '缺少核心文件：index.html' } }));
+        if (!configFile) return setMsg(prev => ({ ...prev, upload: { error: '缺少配置文件：config.json' } }));
 
         // 3. Deep validation of config.json
         try {
             const configText = await configFile.text();
             const configJson = JSON.parse(configText);
 
-            if (!configJson.name) return setError('config.json 缺少 "name" 字段');
+            if (!configJson.name) return setMsg(prev => ({ ...prev, upload: { error: 'config.json 缺少 "name" 字段' } }));
             if (configJson.name !== templateName) {
-                return setError(`名称不一致：config.json 中的 name (${configJson.name}) 与输入框中的名称 (${templateName}) 不匹配`);
+                return setMsg(prev => ({ ...prev, upload: { error: `名称不一致：config.json 中的 name (${configJson.name}) 与输入框中的名称 (${templateName}) 不匹配` } }));
             }
-            if (!configJson.title) return setError('config.json 缺少 "title" (中文名) 字段');
+            if (!configJson.title) return setMsg(prev => ({ ...prev, upload: { error: 'config.json 缺少 "title" (中文名) 字段' } }));
             if (!configJson.fields || !Array.isArray(configJson.fields)) {
-                return setError('config.json 缺少 "fields" 数组');
+                return setMsg(prev => ({ ...prev, upload: { error: 'config.json 缺少 "fields" 数组' } }));
             }
         } catch (err) {
-            return setError('config.json 格式错误：请检查是否为有效的 JSON 文件');
+            return setMsg(prev => ({ ...prev, upload: { error: 'config.json 格式错误：请检查是否为有效的 JSON 文件' } }));
         }
 
         // Save key with timestamp
@@ -192,57 +202,54 @@ export default function Admin() {
         setLoadingUpload(true);
         try {
             const res = await uploadTemplate(formData, adminKey);
-            setSuccess(`模板 ${res.title || res.templateName} (${res.version}) 上传成功！`);
+            setMsg(prev => ({ ...prev, upload: { success: `模板 ${res.title || res.templateName} (${res.version}) 上传成功！`, error: null } }));
             setFiles([]);
             setTemplateName('');
             setDetectedTitle('');
         } catch (err) {
-            setError(getErrorMessage(err));
+            setMsg(prev => ({ ...prev, upload: { error: getErrorMessage(err), success: null } }));
         } finally {
             setLoadingUpload(false);
         }
     };
 
     const handleSync = async () => {
-        if (!adminKey) return setError('请输入管理员密钥');
-        setError(null);
-        setSuccess(null);
+        if (!adminKey) return setMsg(prev => ({ ...prev, upload: { error: '请输入管理员密钥' } }));
+        clearMsgs();
         setLoadingSync(true);
         saveAdminKey(adminKey);
         try {
             const res = await syncTemplates(adminKey);
-            setSuccess(`同步成功！共推送了 ${res.count} 个本地模板到云端。`);
+            setMsg(prev => ({ ...prev, upload: { success: `同步成功！共推送了 ${res.count} 个本地模板到云端。`, error: null } }));
         } catch (err) {
-            setError('同步操作失败: ' + getErrorMessage(err));
+            setMsg(prev => ({ ...prev, upload: { error: '同步操作失败: ' + getErrorMessage(err), success: null } }));
         } finally {
             setLoadingSync(false);
         }
     };
 
     const handleUpdateTier = async (newTier) => {
-        if (!adminKey) return setError('请输入管理员密钥');
-        if (!userId) return setError('未登录：无法获取您的用户 ID');
+        if (!adminKey) return setMsg(prev => ({ ...prev, tier: { error: '请输入管理员密钥' } }));
+        if (!userId) return setMsg(prev => ({ ...prev, tier: { error: '未登录：无法获取您的用户 ID' } }));
         
-        setError(null);
-        setSuccess(null);
+        clearMsgs();
         setLoadingTier(true);
         saveAdminKey(adminKey);
 
         try {
             await updateUserTier(userId, newTier, adminKey);
-            setSuccess(`您的等级已成功更新为：${newTier}`);
+            setMsg(prev => ({ ...prev, tier: { success: `您的等级已成功更新为：${newTier}。请刷新页面或前往个人中心查看变更。`, error: null } }));
             setCurrentTier(newTier.toLowerCase());
         } catch (err) {
-            setError('等级更新失败: ' + getErrorMessage(err));
+            setMsg(prev => ({ ...prev, tier: { error: '等级更新失败: ' + getErrorMessage(err), success: null } }));
         } finally {
             setLoadingTier(false);
         }
     };
 
     const handleRefreshKV = async (type) => {
-        if (!adminKey) return setError('请输入管理员密钥');
-        setError(null);
-        setSuccess(null);
+        if (!adminKey) return setMsg(prev => ({ ...prev, kv: { error: '请输入管理员密钥' } }));
+        clearMsgs();
         
         if (type === 'quotas') setLoadingQuotas(true);
         else setLoadingBlocklist(true);
@@ -253,15 +260,15 @@ export default function Admin() {
         try {
             if (type === 'quotas') {
                 await refreshQuotas(adminKey);
-                setSuccess('会员等级与配额已成功从暂存快照同步至 VPS 缓存。');
+                setMsg(prev => ({ ...prev, kv: { success: '会员等级与配额已成功从暂存快照同步至 VPS 缓存。', error: null } }));
             } else {
                 await refreshBlocklist(adminKey);
-                setSuccess('域名黑名单已成功从暂存快照同步至 VPS 缓存。');
+                setMsg(prev => ({ ...prev, kv: { success: '域名黑名单已成功从暂存快照同步至 VPS 缓存。', error: null } }));
             }
             // Clear warning after success
             setSyncWarnings(prev => ({ ...prev, [type]: false }));
         } catch (err) {
-            setError(`${type === 'quotas' ? '配额' : '黑名单'}刷新失败: ` + getErrorMessage(err));
+            setMsg(prev => ({ ...prev, kv: { error: `${type === 'quotas' ? '配额' : '黑名单'}刷新失败: ` + getErrorMessage(err), success: null } }));
         } finally {
             setLoadingQuotas(false);
             setLoadingBlocklist(false);
@@ -273,8 +280,8 @@ export default function Admin() {
             <h1 className="section-title">🛡️ 管理员后台</h1>
             <p className="section-sub">专属模板发版通道，直连 R2 边缘存储集群。</p>
 
-            {error && <div className="alert alert--error">{error}</div>}
-            {success && <div className="alert alert--success">{success}</div>}
+            {msg.main.error && <div className="alert alert--error">{msg.main.error}</div>}
+            {msg.main.success && <div className="alert alert--success">{msg.main.success}</div>}
 
             <form onSubmit={handleSubmit} className="builder-card">
                 <div className="form-group">
@@ -367,6 +374,8 @@ export default function Admin() {
                         {loadingSync ? '正在同步...' : '🔄 云端全量同步'}
                     </button>
                 </div>
+                {msg.upload.error && <div className="alert alert--error" style={{ marginTop: '1.5rem', marginBottom: 0 }}>{msg.upload.error}</div>}
+                {msg.upload.success && <div className="alert alert--success" style={{ marginTop: '1.5rem', marginBottom: 0 }}>{msg.upload.success}</div>}
             </form>
             
             <div className="note" style={{ marginTop: '20px', fontSize: '0.85rem' }}>
@@ -465,6 +474,9 @@ export default function Admin() {
                     ))}
                 </div>
                 )}
+
+                {msg.tier.error && <div className="alert alert--error" style={{ marginTop: '1.5rem', marginBottom: 0 }}>{msg.tier.error}</div>}
+                {msg.tier.success && <div className="alert alert--success" style={{ marginTop: '1.5rem', marginBottom: 0 }}>{msg.tier.success}</div>}
             </div>
 
             <div className="builder-card" style={{ marginTop: '20px', border: (syncWarnings.quotas || syncWarnings.blocklist) ? '1px solid #fbbf24' : '1px var(--primary-light) solid' }}>
@@ -526,6 +538,9 @@ export default function Admin() {
                         {loadingBlocklist ? '同步中...' : syncWarnings.blocklist ? '⚡ 立即修复名单同步' : '🚫 名单已同步'}
                     </button>
                 </div>
+
+                {msg.kv.error && <div className="alert alert--error" style={{ marginTop: '1.5rem', marginBottom: 0 }}>{msg.kv.error}</div>}
+                {msg.kv.success && <div className="alert alert--success" style={{ marginTop: '1.5rem', marginBottom: 0 }}>{msg.kv.success}</div>}
             </div>
         </div>
     );

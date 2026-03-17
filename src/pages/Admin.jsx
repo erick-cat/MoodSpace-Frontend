@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { uploadTemplate, syncTemplates, refreshQuotas, refreshBlocklist, updateUserTier, getTiers, getSyncStatus } from '../api/client.js';
+import { uploadTemplate, syncTemplates, refreshQuotas, refreshBlocklist, updateUserTier, getTiers, getSyncStatus, listTemplates } from '../api/client.js';
 import { supabase } from '../lib/supabase.js';
 
 export default function Admin() {
@@ -7,7 +7,9 @@ export default function Admin() {
     const [templateName, setTemplateName] = useState('');
     const [files, setFiles] = useState([]);
     const [detectedTitle, setDetectedTitle] = useState('');
+    const [existingTemplates, setExistingTemplates] = useState([]);
 
+    const [loadingTemplates, setLoadingTemplates] = useState(false);
     const [loadingUpload, setLoadingUpload] = useState(false);
     const [loadingSync, setLoadingSync] = useState(false);
     const [loadingQuotas, setLoadingQuotas] = useState(false);
@@ -33,12 +35,24 @@ export default function Admin() {
     });
 
     const getErrorMessage = (err) => {
-        const msg = err.message || String(err);
-        if (msg.includes('templateName must contain')) return '模板英文名格式错误：仅限小写字母、数字或下划线';
-        if (msg.includes('index.html is required')) return '核心文件缺失：必须包含 index.html';
-        if (msg.includes('Invalid admin key') || msg.includes('401') || msg.includes('403')) return '同步失败：管理员密钥无效或权限不足';
-        if (msg.includes('Failed to fetch')) return '网络错误：无法连接到 API 服务器，请检查网络或后端状态';
-        return msg;
+        const msgStr = err.message || String(err);
+        if (msgStr.includes('templateName must contain')) return '模板英文名格式错误：仅限小写字母、数字或下划线';
+        if (msgStr.includes('index.html is required')) return '核心文件缺失：必须包含 index.html';
+        if (msgStr.includes('Invalid admin key') || msgStr.includes('401') || msgStr.includes('403')) return '同步失败：管理员密钥无效或权限不足';
+        if (msgStr.includes('Failed to fetch')) return '网络错误：无法连接到 API 服务器，请检查网络或后端状态';
+        return msgStr;
+    };
+
+    const fetchCurrentTemplates = async () => {
+        try {
+            setLoadingTemplates(true);
+            const res = await listTemplates();
+            if (res.success) setExistingTemplates(res.templates);
+        } catch (err) {
+            console.error('Failed to fetch template list:', err);
+        } finally {
+            setLoadingTemplates(false);
+        }
     };
 
     // Initialize admin key and user session
@@ -53,7 +67,6 @@ export default function Admin() {
         }
 
         const fetchTiersConfig = async () => {
-            // Priority: Local Storage (Fast) -> API (Fresh)
             const cached = localStorage.getItem('rs_tiers_config');
             if (cached) {
                 try {
@@ -74,7 +87,6 @@ export default function Admin() {
             const { data } = await supabase.auth.getSession();
             if (data.session) {
                 setUserId(data.session.user.id);
-                // Fetch current user profile to get tier
                 const { data: profile } = await supabase
                     .from('profiles')
                     .select('tier')
@@ -86,6 +98,7 @@ export default function Admin() {
 
         getSessionAndProfile();
         fetchTiersConfig();
+        fetchCurrentTemplates();
     }, []);
 
     const fetchTiers = async () => {
@@ -137,7 +150,6 @@ export default function Admin() {
             setFiles(selectedFiles);
             setDetectedTitle('');
 
-            // Try to pre-read config.json to show the Chinese title
             const config = selectedFiles.find(f => f.name === 'config.json' || f.name === 'schema.json');
             if (config) {
                 try {
@@ -158,29 +170,40 @@ export default function Admin() {
         if (!adminKey) return setMsg(prev => ({ ...prev, upload: { error: '请输入管理员密钥' } }));
         if (!templateName) return setMsg(prev => ({ ...prev, upload: { error: '请输入模板英文名称' } }));
         
-        // 1. Basic format check for template name
         if (!/^[a-z0-9_]+$/.test(templateName)) {
             return setMsg(prev => ({ ...prev, upload: { error: '模板英文名不符合规范：仅限小写字母、数字和下划线' } }));
         }
 
         if (files.length === 0) return setMsg(prev => ({ ...prev, upload: { error: '请至少选择一个文件' } }));
 
-        // 2. Check for mandatory files
+        const isConflict = existingTemplates.some(t => t.name === templateName);
+        if (isConflict) {
+            const confirmed = window.confirm(`警告：模板 ID "${templateName}" 已存在！\n继续上传将覆盖原有的配置。您确定要以新版本覆盖吗？`);
+            if (!confirmed) return;
+        }
+
         const hasIndex = files.some(f => f.name === 'index.html');
         const configFile = files.find(f => f.name === 'config.json' || f.name === 'schema.json');
         
         if (!hasIndex) return setMsg(prev => ({ ...prev, upload: { error: '缺少核心文件：index.html' } }));
         if (!configFile) return setMsg(prev => ({ ...prev, upload: { error: '缺少配置文件：config.json' } }));
 
-        // 3. Deep validation of config.json
+        let finalConfigFile = configFile;
+        let renamePerformed = false;
+
         try {
             const configText = await configFile.text();
-            const configJson = JSON.parse(configText);
+            let configJson = JSON.parse(configText);
 
             if (!configJson.name) return setMsg(prev => ({ ...prev, upload: { error: 'config.json 缺少 "name" 字段' } }));
+            
             if (configJson.name !== templateName) {
-                return setMsg(prev => ({ ...prev, upload: { error: `名称不一致：config.json 中的 name (${configJson.name}) 与输入框中的名称 (${templateName}) 不匹配` } }));
+                configJson.name = templateName;
+                const blob = new Blob([JSON.stringify(configJson, null, 2)], { type: 'application/json' });
+                finalConfigFile = new File([blob], configFile.name, { type: 'application/json' });
+                renamePerformed = true;
             }
+
             if (!configJson.title) return setMsg(prev => ({ ...prev, upload: { error: 'config.json 缺少 "title" (中文名) 字段' } }));
             if (!configJson.fields || !Array.isArray(configJson.fields)) {
                 return setMsg(prev => ({ ...prev, upload: { error: 'config.json 缺少 "fields" 数组' } }));
@@ -189,23 +212,35 @@ export default function Admin() {
             return setMsg(prev => ({ ...prev, upload: { error: 'config.json 格式错误：请检查是否为有效的 JSON 文件' } }));
         }
 
-        // Save key with timestamp
         saveAdminKey(adminKey);
 
         const formData = new FormData();
         formData.append('templateName', templateName);
-        formData.append('syncToGithub', 'true'); // Mandatory sync
+        formData.append('syncToGithub', 'true'); 
+        
         files.forEach(file => {
-            formData.append(file.name, file);
+            if (file.name === configFile.name) {
+                formData.append(file.name, finalConfigFile);
+            } else {
+                formData.append(file.name, file);
+            }
         });
 
         setLoadingUpload(true);
         try {
             const res = await uploadTemplate(formData, adminKey);
-            setMsg(prev => ({ ...prev, upload: { success: `模板 ${res.title || res.templateName} (${res.version}) 上传成功！`, error: null } }));
+            let successMsg = `模板 ${res.title || res.templateName} (${res.version}) 上传成功！`;
+            if (renamePerformed) {
+                successMsg += ` (系统已自动同步 config.json 里的名称 ID)`;
+            }
+            
+            setMsg(prev => ({ ...prev, upload: { success: successMsg, error: null } }));
             setFiles([]);
             setTemplateName('');
             setDetectedTitle('');
+            
+            const updatedList = await listTemplates();
+            if (updatedList.success) setExistingTemplates(updatedList.templates);
         } catch (err) {
             setMsg(prev => ({ ...prev, upload: { error: getErrorMessage(err), success: null } }));
         } finally {
@@ -254,7 +289,6 @@ export default function Admin() {
         if (type === 'quotas') setLoadingQuotas(true);
         else setLoadingBlocklist(true);
 
-        // Save key with timestamp
         saveAdminKey(adminKey);
         
         try {
@@ -265,7 +299,6 @@ export default function Admin() {
                 await refreshBlocklist(adminKey);
                 setMsg(prev => ({ ...prev, kv: { success: '域名黑名单已成功从暂存快照同步至 VPS 缓存。', error: null } }));
             }
-            // Clear warning after success
             setSyncWarnings(prev => ({ ...prev, [type]: false }));
         } catch (err) {
             setMsg(prev => ({ ...prev, kv: { error: `${type === 'quotas' ? '配额' : '黑名单'}刷新失败: ` + getErrorMessage(err), success: null } }));
@@ -282,6 +315,35 @@ export default function Admin() {
 
             {msg.main.error && <div className="alert alert--error">{msg.main.error}</div>}
             {msg.main.success && <div className="alert alert--success">{msg.main.success}</div>}
+
+            {/* Template List Section */}
+            <div className="builder-card" style={{ marginBottom: '20px' }}>
+                <h3 style={{ fontSize: '1rem', marginBottom: '15px', color: 'var(--primary-dark)' }}>📋 当前已发布模板</h3>
+                {loadingTemplates ? (
+                    <p style={{ fontSize: '0.85rem', color: '#64748b' }}>正在获取模板列表...</p>
+                ) : existingTemplates.length === 0 ? (
+                    <p style={{ fontSize: '0.85rem', color: '#94a3b8' }}>暂无已发布模板</p>
+                ) : (
+                    <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #f1f5f9', borderRadius: '8px' }}>
+                        <table style={{ width: '100%', fontSize: '0.8rem', borderCollapse: 'collapse' }}>
+                            <thead style={{ background: '#f8fafc', position: 'sticky', top: 0 }}>
+                                <tr>
+                                    <th style={{ textAlign: 'left', padding: '10px', borderBottom: '1px solid #e2e8f0' }}>ID (英文)</th>
+                                    <th style={{ textAlign: 'left', padding: '10px', borderBottom: '1px solid #e2e8f0' }}>名称 (中文)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {existingTemplates.map(tmpl => (
+                                    <tr key={tmpl.name} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                        <td style={{ padding: '8px 10px', fontFamily: 'monospace', color: '#0f172a' }}>{tmpl.name}</td>
+                                        <td style={{ padding: '8px 10px', color: '#64748b' }}>{tmpl.title}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
 
             <form onSubmit={handleSubmit} className="builder-card">
                 <div className="form-group">
@@ -308,8 +370,13 @@ export default function Admin() {
                         placeholder="例如：love_letter_v1"
                         required
                     />
+                    {existingTemplates.some(t => t.name === templateName) && (
+                        <p style={{ fontSize: '0.75rem', color: '#d97706', marginTop: '4px', fontWeight: 600 }}>
+                            ⚠️ 该 ID 已存在，上传将触发“覆盖更新”模式。
+                        </p>
+                    )}
                     <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
-                        * 此 ID 决定了网页的静态路径，且必须与文件夹内的 <code>config.json</code> 中的 <code>name</code> 字段严格一致。
+                        * 此 ID 决定路径。若与 config.json 不符，上传时将自动同步源码配置。
                     </p>
                 </div>
 

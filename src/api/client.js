@@ -180,3 +180,23 @@ export async function refreshBlocklist(adminKey) {
         headers: { 'X-Admin-Key': adminKey },
     });
 }
+
+/**
+ * [NEW] Fetches all system configs (quotas + blocklist) and atomicly applies them to memory.
+ */
+export async function syncAllConfig(adminKey) {
+    return apiFetch('/api/project/config/sync-all', {
+        method: 'POST',
+        headers: { 'X-Admin-Key': adminKey },
+    });
+}
+
+/**
+ * [NEW] Hard reset for the template gallery cache and static file.
+ */
+export async function refreshGallery(adminKey) {
+    return apiFetch('/api/template/refresh-gallery', {
+        method: 'POST',
+        headers: { 'X-Admin-Key': adminKey },
+    });
+}

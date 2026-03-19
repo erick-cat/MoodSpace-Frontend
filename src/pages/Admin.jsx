@@ -3,8 +3,8 @@ import {
     uploadTemplate,
     syncTemplates,
     pruneTemplates,
-    refreshQuotas,
-    refreshBlocklist,
+    syncAllConfig,
+    refreshGallery,
     updateUserTier,
     getTiers,
     getSyncStatus,
@@ -26,8 +26,8 @@ export default function Admin() {
     const [loadingTemplates, setLoadingTemplates] = useState(false);
     const [loadingUpload, setLoadingUpload] = useState(false);
     const [loadingSync, setLoadingSync] = useState(false);
-    const [loadingQuotas, setLoadingQuotas] = useState(false);
-    const [loadingBlocklist, setLoadingBlocklist] = useState(false);
+    const [loadingSyncAll, setLoadingSyncAll] = useState(false);
+    const [loadingGalleryRefresh, setLoadingGalleryRefresh] = useState(false);
     const [loadingTier, setLoadingTier] = useState(false);
     const [loadingCheck, setLoadingCheck] = useState(false);
     const [loadingPrune, setLoadingPrune] = useState(false);
@@ -148,7 +148,7 @@ export default function Admin() {
             if (res.isSynced) {
                 setMsg(prev => ({ ...prev, main: { success: '✅ 系统内部数据与云端完全同步。' } }));
             } else {
-                setMsg(prev => ({ ...prev, main: { error: `⚠️ 云端数据已过期，请前往“系统架构”选项卡执行同步。` } }));
+                setMsg(prev => ({ ...prev, main: { error: `⚠️ 检测到配置偏移（KV 已更新但 VPS 内存未刷新），请点击下方的按钮进行“同步并对账”。` } }));
             }
         } catch (err) {
             setMsg(prev => ({ ...prev, main: { error: '同步校验失败: ' + getErrorMessage(err) } }));
@@ -265,6 +265,17 @@ export default function Admin() {
 
     const handleSync = async () => {
         if (!adminKey) return setMsg(prev => ({ ...prev, main: { error: '请输入管理员密钥' } }));
+
+        const confirmed = window.confirm(
+            '⚠️ 确认同步仓库代码？\n\n' +
+            '这将从 GitHub 拉取所有模板文件夹的最新源码并写入 R2 存储。\n\n' +
+            '消耗估算：\n' +
+            '• N 次 R2 Class A (写入新文件)\n' +
+            '• 1 次 KV Class A (更新模板路由)\n\n' +
+            '是否继续？'
+        );
+        if (!confirmed) return;
+
         clearMsgs();
         setLoadingSync(true);
         saveAdminKey(adminKey);
@@ -284,7 +295,14 @@ export default function Admin() {
     const handlePrune = async () => {
         if (!adminKey) return setMsg(prev => ({ ...prev, main: { error: '请输入管理员密钥' } }));
 
-        const confirmed = window.confirm('⚠️ 警告：存储深度清理将永久删除 R2 中所有“非活跃”版本的文件。该操作无法撤销。是否继续？');
+        const confirmed = window.confirm(
+            '⚠️ 确认进行存储深度清理？\n\n' +
+            '这将永久删除 R2 中所有“非活跃”版本的文件。该操作无法撤销。\n\n' +
+            '消耗估算：\n' +
+            '• 1 次 KV Class A (扫描 GC 队列)\n' +
+            '• N 次 R2 Class A/B (批量删除文件)\n\n' +
+            '是否继续？'
+        );
         if (!confirmed) return;
 
         clearMsgs();
@@ -297,6 +315,58 @@ export default function Admin() {
             setMsg(prev => ({ ...prev, main: { error: '清理失败: ' + getErrorMessage(err), success: null } }));
         } finally {
             setLoadingPrune(false);
+        }
+    };
+
+    const handleSyncAllConfig = async () => {
+        if (!adminKey) return setMsg(prev => ({ ...prev, main: { error: '请输入管理员密钥' } }));
+        
+        const confirmed = window.confirm(
+            '⚠️ 确认同步系统配置？\n\n' +
+            '这将从云端 KV 拉取最新的等级配额和黑名单数据，并重置 VPS 运行内存。\n\n' +
+            '消耗估算：\n' +
+            '• 2 次 KV Class B (获取 Quotas & Blocklist)\n\n' +
+            '是否继续？'
+        );
+        if (!confirmed) return;
+
+        clearMsgs();
+        setLoadingSyncAll(true);
+        saveAdminKey(adminKey);
+
+        try {
+            const res = await syncAllConfig(adminKey);
+            setMsg(prev => ({ ...prev, main: { success: res.message, error: null } }));
+            setSyncWarnings({ quotas: false, blocklist: false });
+        } catch (err) {
+            setMsg(prev => ({ ...prev, main: { error: '同步失败: ' + getErrorMessage(err), success: null } }));
+        } finally {
+            setLoadingSyncAll(false);
+        }
+    };
+
+    const handleGalleryRefresh = async () => {
+        if (!adminKey) return setMsg(prev => ({ ...prev, main: { error: '请输入管理员密钥' } }));
+        
+        const confirmed = window.confirm(
+            '⚠️ 确认刷新模板大厅？\n\n' +
+            '这将强制重构 templates.json 静态文件，重置后端缓存，并清理 CDN 边缘缓存节点。\n\n' +
+            '消耗估算：\n' +
+            '• 1 次 KV Class A (列出所有模板)\n' +
+            '• 1 次 Cloudflare Purge (清理全球缓存)\n\n' +
+            '是否继续？'
+        );
+        if (!confirmed) return;
+
+        setLoadingGalleryRefresh(true);
+        try {
+            const res = await refreshGallery(adminKey);
+            setMsg(prev => ({ ...prev, main: { success: res.message, error: null } }));
+            fetchCurrentTemplates();
+        } catch (err) {
+            setMsg(prev => ({ ...prev, main: { error: '刷新失败: ' + getErrorMessage(err), success: null } }));
+        } finally {
+            setLoadingGalleryRefresh(false);
         }
     };
 
@@ -319,37 +389,16 @@ export default function Admin() {
         }
     };
 
-    const handleRefreshKV = async (type) => {
-        if (!adminKey) return setMsg(prev => ({ ...prev, kv: { error: '请输入管理员密钥' } }));
-        clearMsgs();
-
-        if (type === 'quotas') setLoadingQuotas(true);
-        else setLoadingBlocklist(true);
-
-        saveAdminKey(adminKey);
-
-        try {
-            if (type === 'quotas') await refreshQuotas(adminKey);
-            else await refreshBlocklist(adminKey);
-            setMsg(prev => ({ ...prev, kv: { success: '刷新成功。', error: null } }));
-            setSyncWarnings(prev => ({ ...prev, [type]: false }));
-        } catch (err) {
-            setMsg(prev => ({ ...prev, kv: { error: '刷新失败: ' + getErrorMessage(err), success: null } }));
-        } finally {
-            setLoadingQuotas(false);
-            setLoadingBlocklist(false);
-        }
-    };
-
     const handleToggleStatus = async (tmpl) => {
         if (!adminKey) return setMsg(prev => ({ ...prev, main: { error: '请输入管理员密钥' } }));
         const isActive = !tmpl.status || tmpl.status === 'active';
         const targetStatus = isActive ? 'offline' : 'active';
         const actionLabel = isActive ? '下架' : '重新上架';
         const confirmed = window.confirm(
-            isActive
-                ? `⚠️ 确认下架模板 "${tmpl.title || tmpl.name}"？\n\n下架后，新用户无法选用此模板，但所有已发布的用户页面将继续正常运行，数据完整无损。`
-                : `✅ 确认将模板 "${tmpl.title || tmpl.name}" 重新上架？\n\n上架后，此模板将重新出现在前台模板大厅中。`
+            (isActive
+                ? `⚠️ 确认下架模板 "${tmpl.title || tmpl.name}"？\n\n下架后，新用户无法选用此模板，但所有已发布的用户页面将继续正常运行。`
+                : `✅ 确认将模板 "${tmpl.title || tmpl.name}" 重新上架？`) +
+            `\n\n消耗估算：\n• 1 次 KV Class A (修改状态 Key)`
         );
         if (!confirmed) return;
         setLoadingStatusChange(tmpl.name);
@@ -367,7 +416,16 @@ export default function Admin() {
     const handleDeleteTemplate = async (name) => {
         if (!adminKey) return setMsg(prev => ({ ...prev, main: { error: '请输入管理员密钥' } }));
 
-        const confirmed = window.confirm(`❗ 危险操作：确定要删除模板 "${name}" 吗？\n\n1. 所有使用该模板的用户页面将无法正常显示。\n2. R2 存储中的所有相关版本文件将被彻底物理删除。\n\n此操作不可逆，请确认！`);
+        const confirmed = window.confirm(
+            `❗ 危险操作：确定要删除模板 "${name}" 吗？\n\n` +
+            `1. 所有使用该模板的用户页面将无法正常显示。\n` +
+            `2. R2 中的相关文件将被彻底删除。\n\n` +
+            `消耗估算：\n` +
+            `• 1 次 KV Class A (删除路由)\n` +
+            `• 1 次 R2 Class A (列出文件)\n` +
+            `• N 次 R2 Class B (删除文件)\n\n` +
+            `此操作不可逆，请确认！`
+        );
         if (!confirmed) return;
 
         setLoadingDelete(name);
@@ -424,7 +482,7 @@ export default function Admin() {
                         {loadingSync ? '同步中...' : '🔄 同步仓库代码'}
                     </button>
                     <button onClick={handleCheckSync} className="btn btn--sm" disabled={loadingCheck} style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }} title="核对云端 KV 与本地内存的数据一致性">
-                        {loadingCheck ? '核对化...' : '🔍 配置一致性校验'}
+                        {loadingCheck ? '核对中...' : '🔍 配置一致性校验'}
                     </button>
                 </div>
             </div>
@@ -517,7 +575,15 @@ export default function Admin() {
                                        onChange={(e) => setSearchQuery(e.target.value)}
                                        style={{ margin: 0, padding: '5px 10px', width: '160px', fontSize: '0.85rem' }}
                                    />
-                                   <button onClick={() => fetchCurrentTemplates()} className="btn btn--sm" style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0' }}>↻</button>
+                                   <button 
+                                       onClick={handleGalleryRefresh} 
+                                       className="btn btn--sm" 
+                                       disabled={loadingGalleryRefresh} 
+                                       style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #6ee7b7' }}
+                                       title="重置模板大厅缓存并刷新 CDN (消耗额度)"
+                                   >
+                                       {loadingGalleryRefresh ? '...' : '↻ 重置缓存'}
+                                   </button>
                                 </div>
                             </div>
                             {existingTemplates.length === 0 ? (
@@ -626,46 +692,33 @@ export default function Admin() {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                                 <h3 style={{ fontSize: '1.2rem', margin: 0 }}>⚡ 核心调度与清理</h3>
                                 <button onClick={handleCheckSync} className="btn btn--sm" disabled={loadingCheck} style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a', margin: 0 }}>
-                                    {loadingCheck ? '正在核对...' : '🔍 开启一致性校验'}
+                                    {loadingCheck ? '正在核对...' : '🔍 一致性校验'}
                                 </button>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px' }}>
                                 <button
                                     className="btn"
-                                    onClick={() => handleRefreshKV('quotas')}
-                                    disabled={loadingQuotas || !syncWarnings.quotas}
+                                    onClick={handleSyncAllConfig}
+                                    disabled={loadingSyncAll}
                                     style={{
-                                        flexDirection: 'column', padding: '20px', height: 'auto',
-                                        background: syncWarnings.quotas ? '#fff7ed' : '#f8fafc',
-                                        border: syncWarnings.quotas ? '1px solid #fdba74' : '1px solid #e2e8f0',
-                                        opacity: (!syncWarnings.quotas && !loadingQuotas) ? 0.5 : 1
+                                        flexDirection: 'row', padding: '20px', height: 'auto', gap: '15px',
+                                        background: (syncWarnings.quotas || syncWarnings.blocklist) ? '#fff7ed' : '#ecfdf5',
+                                        border: (syncWarnings.quotas || syncWarnings.blocklist) ? '1px solid #fdba74' : '1px solid #6ee7b7',
                                     }}
-                                    title={syncWarnings.quotas ? "从云端 KV 缓存拉取最新的会员等级数据到 VPS 内存" : "内存数据已是最新，无需刷新"}
+                                    title="一键同步云端 KV 所有的等级配额和黑名单配置到 VPS 内存"
                                 >
-                                    <span style={{ fontSize: '1.4rem' }}>💎</span>
-                                    <span style={{ marginTop: '5px' }}>同步等级数据</span>
-                                    {!syncWarnings.quotas && <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '4px' }}>已同步</span>}
-                                </button>
-                                <button
-                                    className="btn"
-                                    onClick={() => handleRefreshKV('blocklist')}
-                                    disabled={loadingBlocklist || !syncWarnings.blocklist}
-                                    style={{
-                                        flexDirection: 'column', padding: '20px', height: 'auto',
-                                        background: syncWarnings.blocklist ? '#fff7ed' : '#f8fafc',
-                                        border: syncWarnings.blocklist ? '1px solid #fdba74' : '1px solid #e2e8f0',
-                                        opacity: (!syncWarnings.blocklist && !loadingBlocklist) ? 0.5 : 1
-                                    }}
-                                    title={syncWarnings.blocklist ? "检测到数据过期，点击同步最新的域名黑名单" : "数据已是最新，无需同步"}
-                                >
-                                    <span style={{ fontSize: '1.4rem' }}>🚫</span>
-                                    <span style={{ marginTop: '5px' }}>同步黑名单数据</span>
-                                    {!syncWarnings.blocklist && <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '4px' }}>已同步</span>}
+                                    <span style={{ fontSize: '1.4rem' }}>🔄</span>
+                                    <div style={{ textAlign: 'left' }}>
+                                        <div style={{ fontWeight: 700 }}>同步系统配置并对账</div>
+                                        <div style={{ fontSize: '0.75rem', color: '#666' }}>
+                                            {(syncWarnings.quotas || syncWarnings.blocklist) ? '检测到数据偏移，建议立即同步' : '数据已对齐，可重复同步'}
+                                        </div>
+                                    </div>
                                 </button>
                             </div>
                             <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '10px', textAlign: 'center' }}>
-                                🛡️ 为了节省资源，执行同步前必须先通过“一致性校验”发现异常。
+                                🛡️ 系统配置包含：会员等级配额、域名黑名单。同步将瞬时刷新 VPS 内存。
                             </p>
                             <button
                                 onClick={handlePrune}

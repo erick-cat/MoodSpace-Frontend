@@ -58,7 +58,7 @@ export default function Upgrade() {
 
     const fetchPricing = async () => {
         try {
-            const url = `${API_BASE}/api/payment/pricing`;
+            const url = `${API_BASE}/api/payment/pricing?userId=${user?.id || ''}`;
             const res = await fetch(url);
             const data = await res.json();
             if (data.success) {
@@ -91,8 +91,10 @@ export default function Upgrade() {
             });
             const data = await res.json();
             if (data.success && data.payUrl) {
-                // Redirect completely to the gateway
-                window.location.href = data.payUrl;
+                // Open payment in a new tab
+                window.open(data.payUrl, '_blank');
+                // Stay on this page for polling
+                toast.success('由于合规要求，请在新打开的页面完成支付。');
             } else {
                 toast.error(data.error || '创建订单失败');
                 setPaying(false);
@@ -177,10 +179,11 @@ export default function Upgrade() {
                                     ¥ {(c.base_price / 100).toFixed(2)}
                                 </div>
                                 <div style={{ fontSize: '3rem', fontWeight: 800, color: '#1e293b' }}>
-                                    <span style={{ fontSize: '1.5rem' }}>¥</span>{(c.first_month_price / 100).toFixed(2)}
+                                    <span style={{ fontSize: '1.5rem' }}>¥</span>
+                                    {c.is_renewal ? (c.renewal_price / 100).toFixed(2) : (c.first_month_price / 100).toFixed(2)}
                                 </div>
                                 <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '8px' }}>
-                                    次月起续费 ¥{(c.renewal_price / 100).toFixed(2)}/月
+                                    {c.is_renewal ? '您的专享续费价' : `次月起续费 ¥${(c.renewal_price / 100).toFixed(2)}/月`}
                                 </div>
                             </div>
                             
@@ -208,7 +211,7 @@ export default function Upgrade() {
                                     fontSize: '1rem', fontWeight: 700, transition: 'all 0.2s ease'
                                 }}
                             >
-                                {paying ? '正在唤起支付...' : '立即开启特权'}
+                                {paying ? '正在唤起支付...' : (c.is_renewal ? '立即续费特权' : '立即开启特权')}
                             </button>
                         </div>
                     );

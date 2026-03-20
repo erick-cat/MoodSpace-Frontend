@@ -8,6 +8,8 @@ const Home = lazy(() => import('./pages/Home.jsx'));
 const Gallery = lazy(() => import('./pages/Gallery.jsx'));
 const Builder = lazy(() => import('./pages/Builder.jsx'));
 const Admin = lazy(() => import('./pages/Admin.jsx'));
+const Upgrade = lazy(() => import('./pages/Upgrade.jsx'));
+const Orders = lazy(() => import('./pages/Orders.jsx'));
 const Auth = lazy(() => import('./pages/Auth.jsx'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback.jsx'));
 const MySpace = lazy(() => import('./pages/MySpace.jsx'));
@@ -62,6 +64,9 @@ function Navbar() {
                     </NavLink>
                     <NavLink to="/builder" className={({ isActive }) => isActive ? 'active' : ''}>
                         制作
+                    </NavLink>
+                    <NavLink to="/upgrade" className={({ isActive }) => isActive ? 'active' : ''}>
+                        升级
                     </NavLink>
                     {user ? (
                         <>
@@ -124,6 +129,8 @@ export default function App() {
                     <Route path="/gallery" element={<Gallery />} />
                     <Route path="/builder" element={<Builder />} />
                     <Route path="/builder/:templateName" element={<Builder />} />
+                    <Route path="/upgrade" element={<Upgrade />} />
+                    <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
                     <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Admin /></ProtectedRoute>} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/auth/callback" element={<AuthCallback />} />

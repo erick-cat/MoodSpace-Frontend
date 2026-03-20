@@ -224,9 +224,12 @@ export default function Auth() {
                 {tab === 'forgot' && (
                     forgotSent
                         ? (
-                            <div className="alert alert--success" style={{ marginTop: '0.5rem', textAlign: 'center' }}>
-                                ✉️ 密码重置链接已发送！<br />
-                                请查收邮件，点击链接即可设置新密码。
+                            <div className="alert alert--success" style={{ marginTop: '0.5rem', textAlign: 'left', lineHeight: 1.8 }}>
+                                ✉️ <strong>密码重置链接已发送！</strong><br />
+                                <span style={{ fontSize: '0.9rem', color: '#555' }}>
+                                    ⚠️ <strong>重要：</strong>请用<strong>手机系统浏览器</strong>（Safari / Chrome）打开邮件中的链接，
+                                    不要在邮件APP的内嵌窗口中打开，否则可能导致链接失效。
+                                </span>
                             </div>
                         )
                         : (

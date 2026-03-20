@@ -635,11 +635,6 @@ export default function Admin() {
                         style={{ margin: 0, padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }}
                     />
                 </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    <button onClick={handleSync} className="btn btn--sm" disabled={loadingSync} style={{ background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0' }} title="将 GitHub 仓库的最新的代码同步到 R2 存储">
-                        {loadingSync ? '同步中...' : '🔄 同步仓库代码'}
-                    </button>
-                </div>
             </div>
 
             {/* Alerts Container */}
@@ -743,14 +738,23 @@ export default function Admin() {
                                        placeholder="搜索 ID 或名称..."
                                        value={searchQuery}
                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                       style={{ margin: 0, padding: '5px 10px', width: '160px', fontSize: '0.85rem' }}
+                                       style={{ margin: 0, padding: '5px 10px', width: '120px', fontSize: '0.85rem' }}
                                    />
+                                   <button 
+                                       onClick={handleSync} 
+                                       className="btn btn--sm" 
+                                       disabled={loadingSync} 
+                                       style={{ background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0' }}
+                                       title="当开发者向 GitHub 提交了新代码，或者您想批量从仓库拉取最新的模板改动时使用。系统会自动识别差异并仅更新有变动的部分。"
+                                   >
+                                       {loadingSync ? '...' : '🔄 同步代码'}
+                                   </button>
                                    <button 
                                        onClick={handleGalleryRefresh} 
                                        className="btn btn--sm" 
                                        disabled={loadingGalleryRefresh} 
                                        style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #6ee7b7' }}
-                                       title="重置模板大厅缓存并刷新 CDN (消耗额度)"
+                                       title="当您修改了模板但前台大厅没有即时刷新，或者需要强制清理全球 CDN 缓存以确保用户看到最新版本时使用。"
                                    >
                                        {loadingGalleryRefresh ? '...' : '↻ 重置缓存'}
                                    </button>
@@ -1136,6 +1140,9 @@ export default function Admin() {
                                     </div>
                                 ))}
                             </div>
+                            <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '10px', lineHeight: 1.4 }}>
+                                💡 <strong>使用场景：</strong> 这里的配置数据是从数据库拉取的。如果您在后端代码或云端手动修改了各等级的配额（如作品上限），点击上方 <b>🔄</b> 刷新；点击右侧 <b>测试切换</b> 可临时模拟不同等级的权限表现。
+                            </p>
                             {msg.tier.error && <div className="alert alert--error" style={{ marginTop: '15px' }}>{msg.tier.error}</div>}
                             {msg.tier.success && <div className="alert alert--success" style={{ marginTop: '15px' }}>{msg.tier.success}</div>}
                         </div>
@@ -1167,8 +1174,8 @@ export default function Admin() {
                                     </div>
                                 </button>
                             </div>
-                            <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '10px', textAlign: 'center' }}>
-                                🛡️ 系统配置包含：会员等级配额、域名黑名单。同步将瞬时刷新 VPS 内存。
+                            <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '10px', lineHeight: 1.4 }}>
+                                💡 <strong>使用场景：</strong> 当您在数据库中修改了会员等级配额或域名黑名单后，点击此项可立即同步到 VPS 运行内存中生效。
                             </p>
                             <button
                                 onClick={handlePrune}
@@ -1178,8 +1185,8 @@ export default function Admin() {
                             >
                                 {loadingPrune ? '深度清理中...' : '🧹 深度清理 R2 存储残留版本'}
                             </button>
-                            <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '10px', textAlign: 'center' }}>
-                                注意：此操作将永久移除所有非活跃版本的 R2 物理文件。
+                            <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '10px', lineHeight: 1.4 }}>
+                                💡 <strong>使用场景：</strong> 当系统中存在大量旧版本残留，且您确定不再需要回退这些版本时，点击进行物理删除以释放 R2 存储空间（不可撤销）。
                             </p>
                             {msg.kv.error && <div className="alert alert--error" style={{ marginTop: '15px' }}>{msg.kv.error}</div>}
                             {msg.kv.success && <div className="alert alert--success" style={{ marginTop: '15px' }}>{msg.kv.success}</div>}

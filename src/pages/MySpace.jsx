@@ -303,9 +303,9 @@ export default function MySpace() {
             {profile?.tier === 'free' && (
                 <div className="myspace-upgrade-hint">
                     <span>💡 体验用户限制作 {status?.maxDomains || 1} 个专属网页，每天最多修改 {status?.maxDailyEdits || 5} 次内容。升级高级会员以享受无限可能。</span>
-                    <a href="#" className="btn btn--primary btn--sm" style={{ marginLeft: '1rem' }}>
+                    <Link to="/upgrade" className="btn btn--primary btn--sm" style={{ marginLeft: '1rem' }}>
                         立即升级
-                    </a>
+                    </Link>
                 </div>
             )}
         </div>

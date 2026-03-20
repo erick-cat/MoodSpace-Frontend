@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import {
     uploadTemplate,
     syncTemplates,
@@ -9,7 +10,10 @@ import {
     getTiers,
     listTemplates,
     deleteTemplate,
-    updateTemplateStatus
+    updateTemplateStatus,
+    listPricingAdmin,
+    upsertPricingConfig,
+    deletePricingConfig
 } from '../api/client.js';
 import { supabase } from '../lib/supabase.js';
 
@@ -31,6 +35,23 @@ export default function Admin() {
     const [loadingPrune, setLoadingPrune] = useState(false);
     const [loadingDelete, setLoadingDelete] = useState(null); // stores template name being deleted
     const [loadingStatusChange, setLoadingStatusChange] = useState(null); // stores template name for status toggling
+    
+    // Pricing Configs State
+    const [pricingConfigs, setPricingConfigs] = useState([]);
+    const [loadingPricing, setLoadingPricing] = useState(false);
+    const [editingPricing, setEditingPricing] = useState(null); // null for new, or {id, ...}
+    const [pricingForm, setPricingForm] = useState({
+        tier: 'pro',
+        duration_months: 1,
+        display_name: '',
+        base_price: 9900,
+        first_month_price: 4900,
+        renewal_price: 9900,
+        discount_label: '',
+        is_active: true,
+        sort_order: 0
+    });
+
     const [userId, setUserId] = useState(null);
     const [currentTier, setCurrentTier] = useState(null);
     const [tiers, setTiers] = useState({});
@@ -67,6 +88,20 @@ export default function Admin() {
             console.error('Failed to fetch template list:', err);
         } finally {
             setLoadingTemplates(false);
+        }
+    };
+
+    const fetchPricing = async (key) => {
+        const effectiveKey = key ?? adminKey;
+        if (!effectiveKey) return;
+        try {
+            setLoadingPricing(true);
+            const res = await listPricingAdmin(effectiveKey);
+            if (res.success) setPricingConfigs(res.data);
+        } catch (err) {
+            console.error('Failed to fetch pricing:', err);
+        } finally {
+            setLoadingPricing(false);
         }
     };
 
@@ -113,6 +148,12 @@ export default function Admin() {
         getSessionAndProfile();
         fetchTiersConfig();
         fetchCurrentTemplates();
+        if (storedValue) {
+            try {
+                const { key } = JSON.parse(storedValue);
+                fetchPricing(key);
+            } catch(e) {}
+        }
     }, []);
 
     const fetchTiers = async () => {
@@ -410,8 +451,9 @@ export default function Admin() {
                 const force = window.confirm(`${errorMsg}\n\n点击“确定”将强制删除（危险），点击“取消”中止操作。`);
                 if (force) {
                     try {
-                        // Retry with force query param
-                        await fetch(`/api/template/${name}?force=true`, {
+                        // Retry with force query param — use API_BASE consistently
+                        const BASE = import.meta.env.VITE_API_BASE_URL || '';
+                        await fetch(`${BASE}/api/template/${name}?force=true`, {
                             method: 'DELETE',
                             headers: { 'X-Admin-Key': adminKey }
                         });
@@ -426,6 +468,46 @@ export default function Admin() {
             }
         } finally {
             setLoadingDelete(null);
+        }
+    };
+
+    const handlePricingSubmit = async (e) => {
+        e.preventDefault();
+        if (!adminKey) return toast.error('请输入管理员密钥');
+        setLoadingPricing(true);
+        try {
+            const data = { ...pricingForm };
+            if (editingPricing) data.id = editingPricing.id;
+            await upsertPricingConfig(data, adminKey);
+            toast.success(editingPricing ? '更新成功' : '创建成功');
+            setEditingPricing(null);
+            setPricingForm({
+                tier: 'pro',
+                duration_months: 1,
+                display_name: '',
+                base_price: 9900,
+                first_month_price: 4900,
+                renewal_price: 9900,
+                discount_label: '',
+                is_active: true,
+                sort_order: 0
+            });
+            fetchPricing(adminKey); // ← pass key so the list actually refreshes
+        } catch (err) {
+            toast.error('操作失败: ' + err.message);
+        } finally {
+            setLoadingPricing(false);
+        }
+    };
+
+    const handleDeletePricing = async (id) => {
+        if (!window.confirm('确定要删除这个套餐吗？这将导致前台无法购买该项。')) return;
+        try {
+            await deletePricingConfig(id, adminKey);
+            toast.success('已删除');
+            fetchPricing(adminKey); // ← pass key so the list actually refreshes
+        } catch (err) {
+            toast.error('删除失败: ' + err.message);
         }
     };
 
@@ -469,8 +551,8 @@ export default function Admin() {
                         padding: '12px 24px',
                         background: 'none',
                         border: 'none',
-                        borderBottom: activeTab === 'templates' ? '2px solid var(--primary)' : 'none',
-                        color: activeTab === 'templates' ? 'var(--primary-dark)' : '#64748b',
+                        borderBottom: activeTab === 'templates' ? '2px solid var(--pink)' : 'none',
+                        color: activeTab === 'templates' ? 'var(--pink-dark)' : '#64748b',
                         fontWeight: activeTab === 'templates' ? 700 : 500,
                         cursor: 'pointer',
                         fontSize: '1rem'
@@ -484,14 +566,29 @@ export default function Admin() {
                         padding: '12px 24px',
                         background: 'none',
                         border: 'none',
-                        borderBottom: activeTab === 'system' ? '2px solid var(--primary)' : 'none',
-                        color: activeTab === 'system' ? 'var(--primary-dark)' : '#64748b',
+                        borderBottom: activeTab === 'system' ? '2px solid var(--pink)' : 'none',
+                        color: activeTab === 'system' ? 'var(--pink-dark)' : '#64748b',
                         fontWeight: activeTab === 'system' ? 700 : 500,
                         cursor: 'pointer',
                         fontSize: '1rem'
                     }}
                 >
                     ⚙️ 系统架构
+                </button>
+                <button
+                    onClick={() => { setActiveTab('pricing'); fetchPricing(adminKey); }}
+                    style={{
+                        padding: '12px 24px',
+                        background: 'none',
+                        border: 'none',
+                        borderBottom: activeTab === 'pricing' ? '2px solid var(--pink)' : 'none',
+                        color: activeTab === 'pricing' ? 'var(--pink-dark)' : '#64748b',
+                        fontWeight: activeTab === 'pricing' ? 700 : 500,
+                        cursor: 'pointer',
+                        fontSize: '1rem'
+                    }}
+                >
+                    💰 套餐定价
                 </button>
             </div>
 
@@ -517,7 +614,7 @@ export default function Admin() {
                                     <div style={{ border: '2px dashed #eee', padding: '20px', textAlign: 'center', borderRadius: '10px', background: '#fafafa', position: 'relative' }}>
                                         <input type="file" multiple onChange={handleFileChange} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
                                         <p style={{ margin: 0, color: '#666' }}>{files.length > 0 ? `已选中 ${files.length} 个文件` : "点击上传源文件"}</p>
-                                        {detectedTitle && <p style={{ margin: '5px 0', color: 'var(--primary)', fontWeight: 700 }}>{detectedTitle}</p>}
+                                        {detectedTitle && <p style={{ margin: '5px 0', color: 'var(--pink)', fontWeight: 700 }}>{detectedTitle}</p>}
                                     </div>
                                 </div>
                                 <button type="submit" className="btn btn--primary" style={{ width: '100%', marginTop: '10px' }} disabled={loadingUpload}>
@@ -614,15 +711,162 @@ export default function Admin() {
                             )}
                         </div>
                     </div>
+                ) : activeTab === 'pricing' ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '30px' }}>
+                        {/* Pricing Form */}
+                        <div className="builder-card">
+                            <h3 style={{ fontSize: '1.2rem', marginBottom: '20px' }}>{editingPricing ? '📝 修改套餐' : '✨ 新建套餐'}</h3>
+                            <form onSubmit={handlePricingSubmit}>
+                                <div className="form-group">
+                                    <label>会员等级 (Tier)</label>
+                                    <select 
+                                        value={pricingForm.tier} 
+                                        onChange={e => setPricingForm({...pricingForm, tier: e.target.value})}
+                                    >
+                                        <option value="free">Free (普通用户)</option>
+                                        <option value="pro">Pro (专业版)</option>
+                                        <option value="partner">Partner (合伙人)</option>
+                                        <option value="lifetime">Lifetime (终身)</option>
+                                        <option value="admin">Admin (管理员)</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label>展示名称</label>
+                                    <input 
+                                        type="text" 
+                                        value={pricingForm.display_name} 
+                                        onChange={e => setPricingForm({...pricingForm, display_name: e.target.value})} 
+                                        placeholder="如：黄金会员"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>有效时长 (月)</label>
+                                    <input 
+                                        type="number" 
+                                        value={pricingForm.duration_months} 
+                                        onChange={e => setPricingForm({...pricingForm, duration_months: parseInt(e.target.value)})} 
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>划线原价 (分)</label>
+                                    <input 
+                                        type="number" 
+                                        value={pricingForm.base_price} 
+                                        onChange={e => setPricingForm({...pricingForm, base_price: parseInt(e.target.value)})} 
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>首月价格 (分)</label>
+                                    <input 
+                                        type="number" 
+                                        value={pricingForm.first_month_price} 
+                                        onChange={e => setPricingForm({...pricingForm, first_month_price: parseInt(e.target.value)})} 
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>续费价格 (分)</label>
+                                    <input 
+                                        type="number" 
+                                        value={pricingForm.renewal_price} 
+                                        onChange={e => setPricingForm({...pricingForm, renewal_price: parseInt(e.target.value)})} 
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>促销标签 (如 '2.9折')</label>
+                                    <input 
+                                        type="text" 
+                                        value={pricingForm.discount_label} 
+                                        onChange={e => setPricingForm({...pricingForm, discount_label: e.target.value})} 
+                                    />
+                                </div>
+                                <div className="form-group" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={pricingForm.is_active} 
+                                        onChange={e => setPricingForm({...pricingForm, is_active: e.target.checked})} 
+                                    />
+                                    <label style={{ margin: 0 }}>是否上架</label>
+                                </div>
+                                <div className="form-group">
+                                    <label>排序 (从小到大)</label>
+                                    <input 
+                                        type="number" 
+                                        value={pricingForm.sort_order} 
+                                        onChange={e => setPricingForm({...pricingForm, sort_order: parseInt(e.target.value)})} 
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <button type="submit" className="btn btn--primary" style={{ flex: 1 }} disabled={loadingPricing}>
+                                        {loadingPricing ? '提交中...' : '提交'}
+                                    </button>
+                                    {editingPricing && (
+                                        <button type="button" className="btn btn--outline" onClick={() => {
+                                            setEditingPricing(null);
+                                            setPricingForm({ tier: 'pro', duration_months: 1, display_name: '', base_price: 9900, first_month_price: 4900, renewal_price: 9900, discount_label: '', is_active: true, sort_order: 0 });
+                                        }}>取消</button>
+                                    )}
+                                </div>
+                            </form>
+                        </div>
+                        
+                        {/* Pricing List */}
+                        <div className="builder-card">
+                            <h3 style={{ fontSize: '1.2rem', marginBottom: '20px' }}>📋 现有套餐 ({pricingConfigs.length})</h3>
+                            <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
+                                <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: '1px solid #eee' }}>
+                                            <th style={{ padding: '10px', textAlign: 'left' }}>名称/等级</th>
+                                            <th style={{ padding: '10px', textAlign: 'left' }}>时长</th>
+                                            <th style={{ padding: '10px', textAlign: 'left' }}>价格 (首月/续费)</th>
+                                            <th style={{ padding: '10px', textAlign: 'left' }}>状态</th>
+                                            <th style={{ padding: '10px', textAlign: 'right' }}>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {pricingConfigs.map(c => (
+                                            <tr key={c.id} style={{ borderBottom: '1px solid #f9f9f9', opacity: c.is_active ? 1 : 0.5 }}>
+                                                <td style={{ padding: '10px' }}>
+                                                    <div style={{ fontWeight: 600 }}>{c.display_name || c.tier}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: '#999' }}>{c.tier}</div>
+                                                </td>
+                                                <td style={{ padding: '10px' }}>{c.duration_months}个月</td>
+                                                <td style={{ padding: '10px' }}>
+                                                    <div style={{ textDecoration: 'line-through', fontSize: '0.75rem', color: '#ccc' }}>¥{(c.base_price/100)}</div>
+                                                    <div>¥{(c.first_month_price/100)} / ¥{(c.renewal_price/100)}</div>
+                                                </td>
+                                                <td style={{ padding: '10px' }}>
+                                                    <span style={{ 
+                                                        background: c.is_active ? '#ecfdf5' : '#fef2f2', 
+                                                        color: c.is_active ? '#059669' : '#dc2626',
+                                                        padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem'
+                                                    }}>
+                                                        {c.is_active ? '上架中' : '已下架'}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '10px', textAlign: 'right' }}>
+                                                    <button className="btn btn--sm" style={{ marginRight: '5px' }} onClick={() => {
+                                                        setEditingPricing(c);
+                                                        setPricingForm({ ...c });
+                                                    }}>编辑</button>
+                                                    <button className="btn btn--sm" style={{ background: '#fef2f2', color: '#dc2626' }} onClick={() => handleDeletePricing(c.id)}>删除</button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(350px, 450px) 1fr', gap: '30px' }}>
                         {/* Membership & Rights */}
                         <div className="builder-card">
                             <h3 style={{ fontSize: '1.2rem', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 👤 权限与配额管理
                                 <button onClick={fetchTiers} disabled={loadingTier} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }}>🔄</button>
                             </h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
                                 {Object.keys(tiers).map(t => (
                                     <div key={t} style={{
                                         padding: '12px 20px',

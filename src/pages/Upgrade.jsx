@@ -17,14 +17,15 @@ export default function Upgrade() {
     const [pollStatus, setPollStatus] = useState('Verifying payment status...');
     const [isSuccess, setIsSuccess] = useState(false);
 
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+
     useEffect(() => {
         if (orderNoParam) {
             // Polling Mode (Redirected from ZhifuFM)
             setLoading(false);
             const interval = setInterval(async () => {
                 try {
-                    // Assuming API is accessible relative if proxy is set, or absolute
-                    const url = `${import.meta.env.VITE_API_URL || ''}/api/payment/query?order_no=${orderNoParam}`;
+                    const url = `${API_BASE}/api/payment/query?order_no=${orderNoParam}`;
                     const res = await fetch(url);
                     const data = await res.json();
                     
@@ -57,11 +58,11 @@ export default function Upgrade() {
 
     const fetchPricing = async () => {
         try {
-            const url = `${import.meta.env.VITE_API_URL || ''}/api/payment/pricing`;
+            const url = `${API_BASE}/api/payment/pricing`;
             const res = await fetch(url);
             const data = await res.json();
             if (data.success) {
-                setConfigs(data.data);
+                setConfigs(data.data || []);
             }
         } catch (e) {
             toast.error('无法获取定价信息');
@@ -77,7 +78,7 @@ export default function Upgrade() {
         }
         setPaying(true);
         try {
-            const url = `${import.meta.env.VITE_API_URL || ''}/api/payment/create`;
+            const url = `${API_BASE}/api/payment/create`;
             const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -102,60 +103,128 @@ export default function Upgrade() {
         }
     };
 
-    if (loading) return <div className="page-container"><div className="spinner"></div></div>;
+    if (loading) return <div className="page-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><div className="spinner"></div></div>;
 
     // Render Polling View
     if (orderNoParam) {
         return (
-            <div className="page-container" style={{ textAlign: 'center', paddingTop: '10vh' }}>
-                <h2>订单状态追踪 🚀</h2>
-                <div style={{ margin: '30px 0', fontSize: '18px', color: '#555' }}>
-                    {pollStatus}
+            <div className="page-container" style={{ textAlign: 'center', padding: '100px 20px', maxWidth: '600px', margin: '0 auto' }}>
+                <div style={{ background: '#fff', padding: '40px', borderRadius: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.05)' }}>
+                    <div style={{ fontSize: '4rem', marginBottom: '20px' }}>{isSuccess ? '✅' : '⏳'}</div>
+                    <h2 style={{ marginBottom: '20px', fontSize: '1.8rem' }}>订单状态追踪</h2>
+                    <div style={{ margin: '20px 0', fontSize: '1.1rem', color: '#64748b', lineHeight: 1.6 }}>
+                        {pollStatus}
+                    </div>
+                    {!isSuccess && <div className="spinner" style={{ margin: '30px auto' }}></div>}
+                    {isSuccess && (
+                        <button 
+                            onClick={() => navigate('/myspace')} 
+                            className="btn btn--primary" 
+                            style={{ marginTop: '20px', padding: '12px 30px' }}
+                        >
+                            返回个人中心
+                        </button>
+                    )}
                 </div>
-                {!isSuccess && <div className="spinner" style={{ margin: '0 auto' }}></div>}
             </div>
         );
     }
 
     // Render Pricing View
     return (
-        <div className="page-container" style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 20px' }}>
-            <h1 style={{ textAlign: 'center', marginBottom: '40px' }}>解锁全部特权 💎</h1>
+        <div className="page-container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '60px 20px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+                <h1 style={{ fontSize: '2.5rem', fontWeight: 800, color: '#1e293b', marginBottom: '16px' }}>解锁全部特权 💎</h1>
+                <p style={{ fontSize: '1.1rem', color: '#64748b' }}>一次订阅，畅享情感空间的无限可能</p>
+            </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-                {configs.map(c => (
-                    <div key={c.id} style={{
-                        border: '2px solid #fee2e2', borderRadius: '16px', padding: '30px',
-                        background: '#fff', textAlign: 'center', boxShadow: '0 4px 15px rgba(0,0,0,0.05)'
-                    }}>
-                        <h2 style={{ textTransform: 'capitalize', color: '#e11d48' }}>{c.tier}</h2>
-                        <h4 style={{ color: '#888' }}>{c.duration_months} / 月</h4>
-                        <div style={{ margin: '20px 0', fontSize: '28px', fontWeight: 'bold' }}>
-                            ¥ {(c.base_price / 100).toFixed(2)}
-                        </div>
-                        {c.discount_rate < 1 && (
-                            <div style={{ color: '#10b981', fontSize: '14px', marginBottom: '15px' }}>
-                                限时折扣: {(c.discount_rate * 10).toFixed(1)} 折
-                                <br />只需: ¥ {((c.base_price * c.discount_rate) / 100).toFixed(2)}
-                            </div>
-                        )}
-                        <button 
-                            disabled={paying}
-                            onClick={() => handleCheckout(c, 'wechat')}
-                            style={{ 
-                                width: '100%', padding: '12px', background: '#e11d48', color: '#fff', 
-                                border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'
-                            }}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '30px' }}>
+                {configs.map(c => {
+                    const isPro = c.tier === 'pro';
+                    return (
+                        <div key={c.id} style={{
+                            border: isPro ? '2px solid var(--pink)' : '1px solid #e2e8f0', 
+                            borderRadius: '24px', 
+                            padding: '40px 30px',
+                            background: '#fff', 
+                            textAlign: 'center', 
+                            boxShadow: isPro ? 'var(--shadow-lg)' : '0 10px 20px rgba(0,0,0,0.02)',
+                            position: 'relative',
+                            transition: 'transform 0.3s ease',
+                            cursor: 'pointer'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                         >
-                            {paying ? '正在生成...' : '立即购买 (微信/支付宝)'}
-                        </button>
-                    </div>
-                ))}
+                            {c.discount_label && (
+                                <div style={{
+                                    position: 'absolute', top: '20px', right: '20px',
+                                    background: 'linear-gradient(135deg, #f43f5e, #e11d48)',
+                                    color: '#fff', padding: '4px 12px', borderRadius: '20px',
+                                    fontSize: '0.75rem', fontWeight: 800, boxShadow: '0 4px 10px rgba(225, 29, 72, 0.3)'
+                                }}>
+                                    {c.discount_label}
+                                </div>
+                            )}
+                            
+                            <h2 style={{ fontSize: '1.5rem', color: '#1e293b', marginBottom: '8px' }}>{c.display_name || c.tier.toUpperCase()}</h2>
+                            <p style={{ color: '#64748b', marginBottom: '30px', fontSize: '0.9rem' }}>
+                                有效期 {c.duration_months} 个月
+                            </p>
+                            
+                            <div style={{ marginBottom: '30px' }}>
+                                <div style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '1rem', marginBottom: '4px' }}>
+                                    ¥ {(c.base_price / 100).toFixed(2)}
+                                </div>
+                                <div style={{ fontSize: '3rem', fontWeight: 800, color: '#1e293b' }}>
+                                    <span style={{ fontSize: '1.5rem' }}>¥</span>{(c.first_month_price / 100).toFixed(2)}
+                                </div>
+                                <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '8px' }}>
+                                    次月起续费 ¥{(c.renewal_price / 100).toFixed(2)}/月
+                                </div>
+                            </div>
+                            
+                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 40px 0', textAlign: 'left', fontSize: '0.95rem', color: '#475569' }}>
+                                <li style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <span style={{ color: 'var(--pink)' }}>✓</span> 无限次模板切换
+                                </li>
+                                <li style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <span style={{ color: 'var(--pink)' }}>✓</span> 专属高级动态背景
+                                </li>
+                                <li style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <span style={{ color: 'var(--pink)' }}>✓</span> 背景音乐库全解锁
+                                </li>
+                                <li style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <span style={{ color: 'var(--pink)' }}>✓</span> 独立二级域名访问
+                                </li>
+                            </ul>
+
+                            <button 
+                                disabled={paying}
+                                onClick={() => handleCheckout(c, 'wechat')}
+                                className={isPro ? "btn btn--primary" : "btn btn--outline"}
+                                style={{ 
+                                    width: '100%', padding: '15px', borderRadius: '15px', 
+                                    fontSize: '1rem', fontWeight: 700, transition: 'all 0.2s ease'
+                                }}
+                            >
+                                {paying ? '正在唤起支付...' : '立即开启特权'}
+                            </button>
+                        </div>
+                    );
+                })}
             </div>
             
             {configs.length === 0 && (
-                <div style={{ textAlign: 'center', color: '#999' }}>暂无开放的购买套餐</div>
+                <div style={{ textAlign: 'center', padding: '80px', background: '#f8fafc', borderRadius: '24px', color: '#94a3b8' }}>
+                    <div style={{ fontSize: '3rem', marginBottom: '20px' }}>✨</div>
+                    <h3>套餐整理中，敬请期待...</h3>
+                </div>
             )}
+
+            <div style={{ marginTop: '60px', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
+                如有支付问题请联系客服微信号: MoodSpaceSupport
+            </div>
         </div>
     );
 }

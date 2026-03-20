@@ -200,3 +200,32 @@ export async function refreshGallery(adminKey) {
         headers: { 'X-Admin-Key': adminKey },
     });
 }
+
+// ── Payment & Pricing endpoints ──────────────────────────────────────────────
+
+/** Get all pricing configurations — admin only for full list inclusive of inactive. */
+export async function listPricingAdmin(adminKey) {
+    return apiFetch('/api/payment/admin/pricing', {
+        headers: { 'X-Admin-Key': adminKey },
+    });
+}
+
+/** Create or update a pricing configuration — admin only. */
+export async function upsertPricingConfig(data, adminKey) {
+    return apiFetch('/api/payment/admin/pricing', {
+        method: 'POST',
+        headers: { 
+            'X-Admin-Key': adminKey,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data),
+    });
+}
+
+/** Delete a pricing configuration — admin only. */
+export async function deletePricingConfig(id, adminKey) {
+    return apiFetch(`/api/payment/admin/pricing/${id}`, {
+        method: 'DELETE',
+        headers: { 'X-Admin-Key': adminKey },
+    });
+}

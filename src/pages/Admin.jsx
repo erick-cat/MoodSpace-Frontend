@@ -354,6 +354,8 @@ export default function Admin() {
         try {
             const res = await syncAllConfig(adminKey);
             setMsg(prev => ({ ...prev, main: { success: res.message, error: null } }));
+            // Add: Automaticaly refresh frontend tier info to match backend's newest memory
+            await fetchTiers();
         } catch (err) {
             setMsg(prev => ({ ...prev, main: { error: '同步失败: ' + getErrorMessage(err), success: null } }));
         } finally {

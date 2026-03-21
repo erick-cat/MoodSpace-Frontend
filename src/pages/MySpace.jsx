@@ -8,7 +8,7 @@ import { getUserStatus } from '../api/client.js';
 const BASE_DOMAIN = import.meta.env.VITE_BASE_DOMAIN || 'moodspace.xyz';
 
 export default function MySpace() {
-    const { user, profile, loading, signOut } = useAuth();
+    const { user, profile, loading, signOut, setProfile } = useAuth();
     const navigate = useNavigate();
     const [projects, setProjects] = useState([]);
     const [loadingProjects, setLoadingProjects] = useState(true);
@@ -118,6 +118,9 @@ export default function MySpace() {
         } else {
             toast.success('昵称已更新');
             setIsEditingNickname(false);
+            if (setProfile && profile) {
+                setProfile({ ...profile, display_name: newNickname.trim() });
+            }
         }
     }
 

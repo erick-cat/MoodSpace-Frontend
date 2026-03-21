@@ -87,10 +87,24 @@ export default function Auth() {
         e.preventDefault();
         setLoading(true);
 
+        let inviterId = null;
+        if (inviteCode) {
+            const { data: inviter } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('invite_code', inviteCode.trim().toUpperCase())
+                .maybeSingle();
+            if (inviter) inviterId = inviter.id;
+        }
+
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
+                data: {
+                    display_name: nickname,
+                    invited_by: inviterId
+                },
                 emailRedirectTo: `${window.location.origin}/auth/callback`,
             },
         });
@@ -106,29 +120,6 @@ export default function Auth() {
             setTab('login');
             setLoading(false);
             return;
-        }
-
-        if (inviteCode && data.user) {
-            const { data: inviter } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('invite_code', inviteCode.trim().toUpperCase())
-                .maybeSingle();
-
-            if (inviter) {
-                await supabase
-                    .from('profiles')
-                    .update({ invited_by: inviter.id })
-                    .eq('id', data.user.id);
-            }
-        }
-
-        if (data.user) {
-            const myCode = data.user.id.slice(0, 8).toUpperCase();
-            const updatePayload = { invite_code: myCode };
-            if (nickname) updatePayload.display_name = nickname;
-            
-            await supabase.from('profiles').update(updatePayload).eq('id', data.user.id);
         }
 
         toast.success('注册成功！请查收验证邮件后登录。');

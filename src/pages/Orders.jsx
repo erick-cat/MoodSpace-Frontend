@@ -19,7 +19,7 @@ export default function Orders() {
             // To be secure, we should query a future `/api/payment/my-orders` endpoint.
             // But since we are connected to supabase via UI sometimes, we might fetch it.
             // Ideally:
-            const url = `${import.meta.env.VITE_API_URL || ''}/api/payment/history?userId=${user.id}`;
+            const url = `${import.meta.env.VITE_API_BASE_URL || ''}/api/payment/history?userId=${user.id}`;
             const res = await fetch(url);
             const data = await res.json();
             if (data.success) {

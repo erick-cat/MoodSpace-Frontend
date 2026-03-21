@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { listTemplates, renderProject, getConfigBySubdomain, getUserStatus, checkDomainAvailability } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
-const BASE_DOMAIN = '885201314.xyz';
+const BASE_DOMAIN = import.meta.env.VITE_BASE_DOMAIN || 'moodspace.xyz';
 
 const FIELD_LABELS = {
     title: '网页标题',
@@ -261,7 +261,7 @@ export default function Builder() {
     // --- BSR Real-time Preview Generation ---
     let previewHtml = '';
     if (rawHtml && selectedTemplate) {
-        const baseTag = `<base href="https://www.885201314.xyz/assets/${selectedTemplate.name}/" />`;
+        const baseTag = `<base href="https://www.${BASE_DOMAIN}/assets/${selectedTemplate.name}/" />`;
 
         const headRegex = /<head[^>]*>/i;
         if (headRegex.test(rawHtml)) {

@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { supabase } from '../lib/supabase.js';
 import { getUserStatus } from '../api/client.js';
 
+const BASE_DOMAIN = import.meta.env.VITE_BASE_DOMAIN || 'moodspace.xyz';
+
 export default function MySpace() {
     const { user, profile, loading, signOut } = useAuth();
     const navigate = useNavigate();
@@ -342,7 +344,7 @@ export default function MySpace() {
                             <div key={p.subdomain} className="myspace-project-row">
                                 <div className="myspace-project-info">
                                     <span className="myspace-project-domain" id={`domain-${p.subdomain}`}>
-                                        🔗 {p.subdomain}.885201314.xyz
+                                        🔗 {p.subdomain}.{BASE_DOMAIN}
                                     </span>
                                     <span className="myspace-project-meta">
                                         模板：{p.template_type} ·
@@ -351,7 +353,7 @@ export default function MySpace() {
                                 </div>
                                 <div className="myspace-project-actions">
                                     <a
-                                        href={`https://${p.subdomain}.885201314.xyz`}
+                                        href={`https://${p.subdomain}.${BASE_DOMAIN}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="btn btn--outline btn--sm"

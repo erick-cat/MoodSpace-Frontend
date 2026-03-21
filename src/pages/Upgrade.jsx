@@ -263,8 +263,8 @@ export default function Upgrade() {
                     const isLifetime = c.tier === 'lifetime';
 
                     // Color Schemes
-                    const themeColor = isPro ? 'var(--pink)' : isPartner ? '#7c3aed' : '#0f172a';
-                    const themeBg = isPro ? '#fff1f2' : isPartner ? '#f5f3ff' : '#f8fafc';
+                    const themeColor = c.color || (isPro ? 'var(--pink)' : isPartner ? '#7c3aed' : '#0f172a');
+                    const themeBg = isPro ? '#fff1f2' : isPartner ? '#f5f3ff' : '#f8fafc'; // Keep light background the same structure
 
                     return (
                         <div key={c.id} style={{
@@ -291,7 +291,7 @@ export default function Upgrade() {
                             {c.discount_label && (
                                 <div style={{
                                     position: 'absolute', top: '-15px', left: '50%', transform: 'translateX(-50%)',
-                                    background: isPro ? 'linear-gradient(135deg, #f43f5e, #e11d48)' : 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                                    background: c.bg || (isPro ? 'linear-gradient(135deg, #f43f5e, #e11d48)' : 'linear-gradient(135deg, #7c3aed, #6d28d9)'),
                                     color: '#fff', padding: '6px 20px', borderRadius: '30px',
                                     fontSize: '0.8rem', fontWeight: 900, boxShadow: '0 10px 20px rgba(0,0,0,0.1)',
                                     whiteSpace: 'nowrap'
@@ -340,21 +340,21 @@ export default function Upgrade() {
                                     等级核心权益:
                                 </div>
                                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '1rem', color: '#475569' }}>
-                                    {[
-                                        { l: '100% 模板库自由切换', p: true },
-                                        { l: `${isPro ? '3' : isPartner ? '10' : '99'} 个域名配额`, p: true },
-                                        { l: '专属 7x24h 情感导师技术支持', p: isPartner || isLifetime },
-                                        { l: '全库 480+ 款无损 BGM 库', p: true },
-                                        { l: '动态粒子特效背景自由定制', p: true },
-                                        { l: '支持绑定个人顶级域名', p: isPartner || isLifetime },
-                                    ].map((item, i) => (
+                                    {(c.features || [
+                                        { text: '100% 模板库自由切换', active: true },
+                                        { text: `${isPro ? '3' : isPartner ? '10' : '99'} 个域名配额`, active: true },
+                                        { text: '专属 7x24h 情感导师技术支持', active: isPartner || isLifetime },
+                                        { text: '全库 480+ 款无损 BGM 库', active: true },
+                                        { text: '动态粒子特效背景自由定制', active: true },
+                                        { text: '支持绑定个人顶级域名', active: isPartner || isLifetime },
+                                    ]).map((item, i) => (
                                         <li key={i} style={{ 
                                             marginBottom: '14px', display: 'flex', alignItems: 'flex-start', gap: '12px',
-                                            opacity: item.p ? 1 : 0.35
+                                            opacity: item.active ? 1 : 0.35
                                         }}>
                                             <span style={{ 
                                                 width: '20px', height: '20px', borderRadius: '50%',
-                                                background: item.p ? themeColor : '#cbd5e1',
+                                                background: item.active ? themeColor : '#cbd5e1',
                                                 color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 fontSize: '10px', marginTop: '4px', flexShrink: 0
                                             }}>{item.p ? '✓' : '✕'}</span>

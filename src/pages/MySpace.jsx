@@ -18,7 +18,9 @@ export default function MySpace() {
         tier: 'free',
         label: '🌟 体验用户',
         dailyUsedEdits: 0,
-        maxDailyEdits: 5
+        maxDailyEdits: 5,
+        bg: '#f0e6ee',
+        color: 'var(--pink)'
     });
     const [loadingStatus, setLoadingStatus] = useState(true);
     const [inviteCount, setInviteCount] = useState(0);
@@ -170,12 +172,11 @@ export default function MySpace() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span className="badge" style={{ 
-                            background: profile?.tier === 'pro' ? 'linear-gradient(135deg, #f43f5e, #e11d48)' : 
-                                        profile?.tier === 'partner' ? 'linear-gradient(135deg, #7c3aed, #4f46e5)' : '#f0e6ee',
-                            color: (profile?.tier === 'pro' || profile?.tier === 'partner') ? '#fff' : 'var(--pink)',
+                            background: status.bg,
+                            color: status.color,
                             border: 'none'
                         }}>
-                            {profile?.tier?.toUpperCase() || 'FREE'}
+                            {status.label || profile?.tier?.toUpperCase() || 'FREE'}
                         </span>
                         {profile?.subscription_expires_at && (
                             <span style={{ fontSize: '0.75rem', color: '#64748b' }}>

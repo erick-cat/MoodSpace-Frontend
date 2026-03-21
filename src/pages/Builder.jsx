@@ -294,7 +294,7 @@ export default function Builder() {
                     </div>
                 </div>
             )}
-            {editSubdomain && (
+            {editSubdomain && status && (
                 <div style={{ padding: '20px', background: '#f8fafc', borderTop: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem', color: '#64748b' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ color: '#0ea5e9' }}>ℹ️</span>

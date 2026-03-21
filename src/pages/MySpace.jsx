@@ -14,16 +14,27 @@ export default function MySpace() {
     const [loadingProjects, setLoadingProjects] = useState(true);
     const [generatingCode, setGeneratingCode] = useState(false);
     const [localInviteCode, setLocalInviteCode] = useState(null);
-    const [status, setStatus] = useState({ 
-        count: 0, 
-        maxDomains: 1, 
-        tier: 'free',
-        label: '🌟 体验用户',
-        dailyUsedEdits: 0,
-        maxDailyEdits: 5,
-        bg: '#f0e6ee',
-        color: 'var(--pink)'
+    const [status, setStatusState] = useState(() => {
+        const cached = localStorage.getItem('rs_status');
+        if (cached) {
+            try { return JSON.parse(cached); } catch (e) {}
+        }
+        return { 
+            count: 0, 
+            maxDomains: 1, 
+            tier: 'free',
+            label: '🌟 体验用户',
+            dailyUsedEdits: 0,
+            maxDailyEdits: 5,
+            bg: '#f0e6ee',
+            color: 'var(--pink)'
+        };
     });
+
+    const setStatus = (newStatus) => {
+        setStatusState(newStatus);
+        localStorage.setItem('rs_status', JSON.stringify(newStatus));
+    };
     const [loadingStatus, setLoadingStatus] = useState(true);
     const [inviteCount, setInviteCount] = useState(0);
     const [isEditingNickname, setIsEditingNickname] = useState(false);
@@ -81,6 +92,7 @@ export default function MySpace() {
     }, [user, profile?.tier, profile?.subscription_expires_at]);
 
     async function handleSignOut() {
+        localStorage.removeItem('rs_status');
         await signOut();
         toast.success('已退出登录');
         navigate('/');
@@ -223,6 +235,11 @@ export default function MySpace() {
                                 <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b' }}>
                                     {status.count} <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>/ {status.maxDomains}</span>
                                 </div>
+                                {status.inviteBonus > 0 && (
+                                    <div style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 600 }}>
+                                        🎁 含邀请奖励 +{status.inviteBonus}
+                                    </div>
+                                )}
                                 <div style={{ height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden', marginTop: '4px' }}>
                                     <div style={{ height: '100%', background: 'linear-gradient(90deg, #6366f1, #8b5cf6)', width: `${Math.min(100, (status.count / status.maxDomains) * 100)}%` }} />
                                 </div>

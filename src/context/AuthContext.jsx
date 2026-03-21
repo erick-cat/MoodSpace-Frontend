@@ -9,7 +9,21 @@ const AuthContext = createContext(null);
  */
 export function AuthProvider({ children }) {
     const [session, setSession] = useState(undefined); // undefined = not yet loaded
-    const [profile, setProfile] = useState(null);
+    const [profile, setProfileState] = useState(() => {
+        // Try to load cached profile initially to prevent UI flicker/layout shift
+        const cached = localStorage.getItem('rs_profile');
+        return cached ? JSON.parse(cached) : null;
+    });
+
+    // Custom setter that also updates cache
+    const setProfile = (newProfile) => {
+        setProfileState(newProfile);
+        if (newProfile) {
+            localStorage.setItem('rs_profile', JSON.stringify(newProfile));
+        } else {
+            localStorage.removeItem('rs_profile');
+        }
+    };
 
     useEffect(() => {
         // Load session on mount
@@ -31,15 +45,20 @@ export function AuthProvider({ children }) {
             setProfile(null);
             return;
         }
+
+        // Fetch the latest to ensure cache is correct, but we already have cached data keeping the UI stable
         supabase
             .from('profiles')
-            .select('id, username, display_name, avatar_url, role, tier, invite_code')
+            .select('id, username, display_name, avatar_url, role, tier, invite_code, invited_by')
             .eq('id', session.user.id)
             .maybeSingle()
-            .then(({ data }) => setProfile(data));
+            .then(({ data }) => {
+                if (data) setProfile(data); // This will update both state and localStorage
+            });
     }, [session]);
 
     async function signOut() {
+        setProfile(null); // Clear local auth state and cache
         await supabase.auth.signOut();
     }
 

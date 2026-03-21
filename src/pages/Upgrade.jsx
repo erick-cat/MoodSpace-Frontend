@@ -265,7 +265,7 @@ export default function Upgrade() {
                     const isLifetime = c.tier === 'lifetime';
 
                     // Color Schemes
-                    const themeColor = c.color || (isPro ? 'var(--pink)' : isPartner ? '#7c3aed' : '#0f172a');
+                    const themeColor = c.accentColor || (isPro ? '#f43f5e' : isPartner ? '#7c3aed' : '#1e293b');
                     const themeBg = isPro ? '#fff1f2' : isPartner ? '#f5f3ff' : '#f8fafc'; // Keep light background the same structure
 
                     return (

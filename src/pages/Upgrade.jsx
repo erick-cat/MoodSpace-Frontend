@@ -257,7 +257,9 @@ export default function Upgrade() {
                     </button>
                 </div>
 
-                {configs.map(c => {
+                {[...configs]
+                    .sort((a, b) => (a.limit || 0) - (b.limit || 0))
+                    .map(c => {
                     const isPro = c.tier === 'pro';
                     const isPartner = c.tier === 'partner';
                     const isLifetime = c.tier === 'lifetime';

@@ -1027,7 +1027,12 @@ export default function Admin() {
                                 <div style={{ textAlign: 'center', padding: '60px', color: '#94a3b8', background: '#f8fafc', borderRadius: '12px' }}>暂无套餐，请从左侧创建</div>
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    {pricingConfigs.map(c => {
+                                    {[...pricingConfigs]
+                                        .sort((a, b) => {
+                                            if ((a.limit || 0) !== (b.limit || 0)) return (a.limit || 0) - (b.limit || 0);
+                                            return (a.sort_order || 0) - (b.sort_order || 0);
+                                        })
+                                        .map(c => {
                                         // Determine policy type label
                                         const hasFirstMonth = c.first_month_price != null && c.first_month_price > 0;
                                         const hasRenewal = c.renewal_price != null && c.renewal_price > 0;
@@ -1122,7 +1127,9 @@ export default function Admin() {
                                 <button onClick={fetchTiers} disabled={loadingTier} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }}>🔄</button>
                             </h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
-                                {Object.keys(tiers).map(t => (
+                                {Object.keys(tiers)
+                                    .sort((a, b) => (tiers[a].limit || 0) - (tiers[b].limit || 0))
+                                    .map(t => (
                                     <div key={t} style={{
                                         padding: '12px 20px',
                                         borderRadius: '12px',

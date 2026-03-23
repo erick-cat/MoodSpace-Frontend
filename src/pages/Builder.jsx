@@ -501,7 +501,12 @@ export default function Builder() {
             <div className={`fixed bottom-[96px] md:bottom-[100px] left-0 w-full z-40 pointer-events-none`}>
                 <div className="w-full max-w-7xl mx-auto px-6 md:px-12 flex justify-between items-center pointer-events-auto">
                     <button
-                        onClick={() => location.state?.from === 'gallery' ? navigate('/gallery') : navigate('/', { state: { returnToStep: 2 } })}
+                        onClick={() => {
+                            const from = location.state?.from;
+                            if (from === 'gallery') navigate('/gallery');
+                            else if (from === 'myspace') navigate('/myspace');
+                            else navigate('/', { state: { returnToStep: 2 } });
+                        }}
                         className={`group flex items-center justify-center gap-2 text-on-surface hover:text-white transition-all font-headline font-light tracking-widest px-6 py-3 md:px-8 md:py-3.5 cursor-pointer rounded-full bg-surface-container-high/60 hover:bg-surface-container-highest border border-outline-variant/20 backdrop-blur-xl shadow-lg shadow-black/20 text-sm md:text-base`}
                     >
                         <span className="material-symbols-outlined text-base md:text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>

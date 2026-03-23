@@ -1,23 +1,210 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="dark">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover" />
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1a1a2e" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#0d0a27" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="description" content="制作专属浪漫网页，一键分享给你爱的人" />
     <title>Mood Space 💕</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet" />
+    
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500&amp;family=Plus+Jakarta+Sans:wght@300;400;500;600&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+    
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-error-container": "#ffb2b9",
+                        "on-primary-fixed": "#21002f",
+                        "tertiary-fixed-dim": "#ed8b7d",
+                        "surface-tint": "#e08efe",
+                        "secondary-fixed-dim": "#bcbeff",
+                        "on-secondary-container": "#cbccff",
+                        "tertiary-fixed": "#fd9889",
+                        "on-tertiary-fixed-variant": "#6a251c",
+                        "surface-container-highest": "#24204a",
+                        "on-surface-variant": "#aca7cc",
+                        "surface-bright": "#2a2653",
+                        "inverse-surface": "#fcf8ff",
+                        "primary-container": "#d180ef",
+                        "tertiary-container": "#fd9889",
+                        "inverse-on-surface": "#555172",
+                        "on-error": "#490013",
+                        "on-tertiary": "#6b261d",
+                        "primary-fixed-dim": "#ce7eec",
+                        "on-tertiary-fixed": "#3d0402",
+                        "outline-variant": "#474464",
+                        "error-container": "#a70138",
+                        "surface-variant": "#24204a",
+                        "surface-container-low": "#120f2f",
+                        "on-secondary-fixed": "#232588",
+                        "inverse-primary": "#893da7",
+                        "on-background": "#e7e2ff",
+                        "surface-dim": "#0d0a27",
+                        "outline": "#757294",
+                        "surface": "#0d0a27",
+                        "primary-fixed": "#dd8bfb",
+                        "primary": "#e08efe",
+                        "secondary-dim": "#9094fa",
+                        "tertiary-dim": "#ed8b7d",
+                        "surface-container-lowest": "#000000",
+                        "error": "#ff6e84",
+                        "surface-container-high": "#1e1a41",
+                        "on-primary-fixed-variant": "#5a0179",
+                        "on-primary": "#4f006c",
+                        "tertiary": "#ffac9f",
+                        "primary-dim": "#ce7eec",
+                        "error-dim": "#d73357",
+                        "background": "#0d0a27",
+                        "surface-container": "#181538",
+                        "secondary": "#9094fa",
+                        "on-tertiary-container": "#5e1c14",
+                        "secondary-fixed": "#cdcdff",
+                        "on-primary-container": "#3d0055",
+                        "secondary-container": "#373a9b",
+                        "on-secondary-fixed-variant": "#4145a5",
+                        "on-surface": "#e7e2ff",
+                        "on-secondary": "#080575"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0d0a27;
+            color: #e7e2ff;
+            overflow-x: hidden;
+        }
+
+        .cosmic-gradient {
+            background: radial-gradient(circle at 50% 50%, #1e1a41 0%, #120f2f 40%, #0d0a27 100%);
+        }
+
+        .nebula-glow {
+            filter: blur(80px);
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .glass-card {
+            background: rgba(36, 32, 74, 0.4);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(71, 68, 100, 0.2);
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .glass-card:hover {
+            background: rgba(42, 38, 83, 0.6);
+            transform: translateY(-12px);
+            border-color: rgba(224, 142, 254, 0.4);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        /* ── Auth Page Dark Theme Overrides ── */
+        /* Force clear the white background from index.css */
+        .page-dark .auth-card {
+            background: rgba(36, 32, 74, 0.4) !important;
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(71, 68, 100, 0.2) !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+        }
+        .page-dark .auth-card:hover {
+            background: rgba(42, 38, 83, 0.6) !important;
+            transform: translateY(-12px);
+            border-color: rgba(224, 142, 254, 0.4) !important;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        /* Form inputs overriding for dark theme to look like auth page */
+        .page-dark input[type="email"],
+        .page-dark input[type="password"],
+        .page-dark input[type="text"] {
+            background: rgba(24, 21, 56, 0.7) !important;
+            color: #fcf8ff !important;
+            border: 1px solid rgba(224, 142, 254, 0.2) !important;
+            border-radius: 12px !important;
+        }
+        .page-dark input::placeholder {
+            color: rgba(255, 255, 255, 0.3) !important;
+        }
+        .page-dark input:focus {
+            border-color: rgba(224, 142, 254, 0.8) !important;
+            box-shadow: 0 0 0 3px rgba(224, 142, 254, 0.15) !important;
+            outline: none;
+        }
+        
+        /* Text Colors matching the purple theme */
+        .page-dark .auth-title {
+            color: #fcf8ff !important;
+        }
+        .page-dark .auth-sub {
+            color: #d180ef !important;
+        }
+        .page-dark .auth-tab {
+            color: rgba(224, 142, 254, 0.5) !important;
+        }
+        .page-dark .auth-tab.active {
+            color: #e08efe !important;
+            border-bottom-color: #e08efe !important;
+        }
+        .page-dark .form-group label {
+            color: #e08efe !important;
+            font-weight: 500 !important;
+            text-align: left;
+        }
+        .page-dark .auth-disclaimer {
+            color: rgba(255, 255, 255, 0.6) !important;
+            background: rgba(24, 21, 56, 0.5) !important;
+            border-left-color: #e08efe !important;
+        }
+        .page-dark .auth-tabs {
+            border-bottom-color: rgba(224, 142, 254, 0.2) !important;
+        }
+        
+        /* Link buttons inside Auth */
+        .page-dark .auth-link-btn,
+        .page-dark .auth-footer-link a {
+            color: #d180ef !important;
+            transition: color 0.3s ease;
+        }
+        .page-dark .auth-link-btn:hover,
+        .page-dark .auth-footer-link a:hover {
+            color: #e08efe !important;
+        }
+    </style>
 </head>
 
-<body>
+<body class="font-body selection:bg-primary/30 selection:text-primary-fixed">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    
 </body>
 
 </html>

@@ -94,7 +94,7 @@ function TemplateCard({ t }) {
                 >
                     预览
                 </a>
-                <Link to={`/builder/${t.name}`} className="btn btn--primary btn--sm" style={{ flex: 2, textAlign: 'center' }}>
+                <Link to={`/builder/${t.name}`} state={{ from: 'gallery' }} className="btn btn--primary btn--sm" style={{ flex: 2, textAlign: 'center' }}>
                     使用模板
                 </Link>
             </div>

@@ -1,5 +1,5 @@
-import { Suspense, lazy, useEffect } from 'react';
-import { Routes, Route, NavLink, useNavigate } from 'react-router-dom';
+import { Suspense, lazy, useEffect, useState } from 'react';
+import { Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Toaster, toast } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 
@@ -56,33 +56,47 @@ function Navbar() {
     }
 
     return (
-        <nav className="navbar">
-            <div className="navbar__inner">
-                <NavLink to="/" className="navbar__brand">💕 Romance</NavLink>
-                <div className="navbar__links">
-                    <NavLink to="/gallery" className={({ isActive }) => isActive ? 'active' : ''}>
-                        大厅
-                    </NavLink>
-                    <NavLink to="/builder" className={({ isActive }) => isActive ? 'active' : ''}>
-                        制作
-                    </NavLink>
-                    {user ? (
-                        <>
-                            <NavLink to="/myspace" className={({ isActive }) => isActive ? 'active' : ''} id="nav-myspace">
-                                {profile?.display_name?.slice(0, 4) ?? '我的'}
-                            </NavLink>
-                            {profile?.role === 'admin' && (
-                                <NavLink to="/admin" className={({ isActive }) => isActive ? 'active' : ''} id="nav-admin">
-                                    管理
-                                </NavLink>
-                            )}
-                        </>
-                    ) : (
-                        <NavLink to="/auth" className={({ isActive }) => isActive ? 'active' : ''} id="nav-login">
-                            登录
+        <nav className="global-navbar fixed top-0 w-full z-50 flex justify-between items-center px-12 py-6 bg-transparent backdrop-blur-3xl bg-gradient-to-b from-slate-950/50 to-transparent">
+            <div>
+                <NavLink 
+                    to="/" 
+                    onClick={(e) => {
+                        if (window.location.pathname === '/') {
+                            e.preventDefault();
+                            window.dispatchEvent(new CustomEvent('moodspace-reset-home'));
+                        }
+                    }} 
+                    className="text-2xl font-light tracking-widest text-indigo-50 dark:text-indigo-100 font-headline leading-relaxed" 
+                    style={{ textDecoration: 'none' }}
+                >
+                    Mood Space
+                </NavLink>
+            </div>
+            <div className="flex items-center gap-12 leading-relaxed">
+                <NavLink to="/gallery" className={({ isActive }) => `text-indigo-200 font-medium text-sm tracking-wide ${isActive ? 'border-b border-indigo-400/30' : 'hover:border-b hover:border-indigo-400/30'}`} style={{ textDecoration: 'none' }}>
+                    模板大厅
+                </NavLink>
+                <NavLink to="/builder" className={({ isActive }) => `text-indigo-200 font-medium text-sm tracking-wide ${isActive ? 'border-b border-indigo-400/30' : 'hover:border-b hover:border-indigo-400/30'}`} style={{ textDecoration: 'none' }}>
+                    制作
+                </NavLink>
+                {user ? (
+                    <>
+                        <NavLink to="/myspace" className={({ isActive }) => `text-indigo-200 font-medium text-sm tracking-wide ${isActive ? 'border-b border-indigo-400/30' : 'hover:border-b hover:border-indigo-400/30'}`} id="nav-myspace" style={{ textDecoration: 'none' }}>
+                            我的空间
                         </NavLink>
-                    )}
-                </div>
+                        {profile?.role === 'admin' && (
+                            <NavLink to="/admin" className={({ isActive }) => `text-indigo-200 font-medium text-sm tracking-wide ${isActive ? 'border-b border-indigo-400/30' : 'hover:border-b hover:border-indigo-400/30'}`} id="nav-admin" style={{ textDecoration: 'none' }}>
+                                管理
+                            </NavLink>
+                        )}
+                    </>
+                ) : (
+                    <NavLink to="/auth" id="nav-login" style={{ textDecoration: 'none' }}>
+                        <button className="px-8 py-2.5 rounded-xl bg-gradient-to-br from-primary to-primary-container text-on-primary font-medium text-sm transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg shadow-primary/20">
+                            登录
+                        </button>
+                    </NavLink>
+                )}
             </div>
         </nav>
     );
@@ -93,6 +107,59 @@ function PageLoader() {
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
             <div className="spinner" />
         </div>
+    );
+}
+
+function GlobalFooter() {
+    const [isSlim, setIsSlim] = useState(false);
+    const [isHidden, setIsHidden] = useState(false);
+    const location = useLocation();
+
+    useEffect(() => {
+        const handleRouteAndScroll = () => {
+            const path = location.pathname;
+            if (path === '/') {
+                // Home.jsx controls it via custom events, handled in the other useEffect
+                return;
+            } else if (path.includes('/builder')) {
+                // Builder has fixed bottom elements, always keep it slim to prevent overlap
+                setIsSlim(true);
+                setIsHidden(false);
+            } else {
+                // Other pages (Gallery, etc.) use window scroll context
+                setIsSlim(window.scrollY > 50);
+                setIsHidden(false);
+            }
+        };
+
+        handleRouteAndScroll();
+        window.addEventListener('scroll', handleRouteAndScroll);
+        
+        // Listen to react-router pushState / popstate indirectly by polling or depending on a top level location
+        // We'll trust the component remounting or just use scroll for now.
+        return () => window.removeEventListener('scroll', handleRouteAndScroll);
+    }, [location.pathname]);
+
+    useEffect(() => {
+        const handleScreenChange = (e) => {
+            const screenIndex = e.detail;
+            setIsHidden(screenIndex === 3);
+            setIsSlim(screenIndex !== 0 && screenIndex !== 3);
+        };
+        window.addEventListener('moodspace-screen', handleScreenChange);
+        return () => window.removeEventListener('moodspace-screen', handleScreenChange);
+    }, []);
+
+    return (
+        <footer className={`global-footer fixed bottom-0 left-0 w-full flex flex-col md:flex-row justify-between items-center z-50 pointer-events-none transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] border-t ${isHidden ? 'translate-y-full opacity-0 bg-transparent border-transparent' : !isSlim ? 'py-8 md:py-12 px-8 md:px-12 bg-transparent border-transparent' : 'py-4 md:py-6 px-6 md:px-12 bg-surface/30 backdrop-blur-md border-outline-variant/10 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]'}`}>
+            <div className={`font-light font-headline tracking-widest pointer-events-auto transition-all duration-700 ${!isSlim ? 'text-indigo-100/60 text-sm md:text-lg mb-4 md:mb-0' : 'text-indigo-100/40 text-xs md:text-sm mb-2 md:mb-0'}`}>
+                每一种情绪，都有属于它的空间
+            </div>
+            <div className="flex gap-4 md:gap-8 pointer-events-auto mt-2 md:mt-0 transition-all duration-700 shadow-sm">
+                <NavLink to="/gallery" className={`font-light tracking-widest uppercase hover:text-indigo-100 transition-colors ${!isSlim ? 'text-indigo-100/40 text-xs md:text-sm' : 'text-indigo-100/30 text-[10px] md:text-xs'}`}>进入大厅</NavLink>
+                <NavLink to="/auth" className={`font-light tracking-widest uppercase hover:text-indigo-100 transition-colors ${!isSlim ? 'text-indigo-100/40 text-xs md:text-sm' : 'text-indigo-100/30 text-[10px] md:text-xs'}`}>管理空间</NavLink>
+            </div>
+        </footer>
     );
 }
 
@@ -130,6 +197,7 @@ export default function App() {
                     <Route path="/preview/:templateName" element={<Preview />} />
                 </Routes>
             </Suspense>
+            <GlobalFooter />
         </AuthProvider>
     );
 }

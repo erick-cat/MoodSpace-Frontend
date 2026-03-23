@@ -144,13 +144,19 @@ export default function Auth() {
         setLoading(false);
     }
 
+    useEffect(() => {
+        document.body.classList.add('page-dark');
+        return () => document.body.classList.remove('page-dark');
+    }, []);
+
     return (
-        <div className="page container" style={{ maxWidth: 460 }}>
-            <div className="auth-card">
-                <div className="auth-logo">💕</div>
-                <h1 className="auth-title">浪漫空间</h1>
-                <p className="auth-sub">
-                    {tab === 'register' ? '加入我们，开启你的浪漫记录' : '登录后即可永久保存你的浪漫网页'}
+        <div className="cosmic-gradient" style={{ minHeight: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '80px', paddingBottom: '40px' }}>
+            <div style={{ maxWidth: 460, width: '100%', padding: '0 20px', position: 'relative', zIndex: 10 }}>
+                <div className="auth-card glass-card">
+                    <div className="auth-logo">✨</div>
+                    <h1 className="auth-title text-on-surface">Mood Space</h1>
+                    <p className="auth-sub text-on-surface-variant">
+                    {tab === 'register' ? '加入我们，一个存放情绪的安全空间' : '登录空间，安放你的每一段情绪'}
                 </p>
 
                 {/* Tab switcher */}
@@ -209,8 +215,8 @@ export default function Auth() {
                                 忘记密码？
                             </button>
                         </div>
-                        <button id="btn-login-submit" type="submit" className="btn btn--primary auth-submit" disabled={loading}>
-                            {loading ? '登录中...' : '🔑 立即登录'}
+                        <button id="btn-login-submit" type="submit" className="w-full mt-2 py-3 rounded-xl bg-gradient-to-br from-primary to-primary-container text-on-primary font-medium text-sm transition-all duration-300 hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/20" disabled={loading}>
+                            {loading ? '登录中...' : '启动空间'}
                         </button>
                     </form>
                 )}
@@ -238,8 +244,8 @@ export default function Auth() {
                                 <p className="auth-disclaimer">
                                     我们将向该邮箱发送一条加密链接，点击即可重置密码。
                                 </p>
-                                <button id="btn-forgot-submit" type="submit" className="btn btn--primary auth-submit" disabled={loading}>
-                                    {loading ? '发送中...' : '📧 发送重置链接'}
+                                <button id="btn-forgot-submit" type="submit" className="w-full mt-2 py-3 rounded-xl bg-gradient-to-br from-primary to-primary-container text-on-primary font-medium text-sm transition-all duration-300 hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/20" disabled={loading}>
+                                    {loading ? '发送中...' : '📧 发送验证'}
                                 </button>
                                 <div style={{ textAlign: 'center', marginTop: '1rem' }}>
                                     <button
@@ -302,16 +308,17 @@ export default function Auth() {
                                 💡 若连续 180 天无人访问，该网址将被自动回收以节约服务器资源。
                             </span>
                         </div>
-                        <button id="btn-register-submit" type="submit" className="btn btn--primary auth-submit" style={{ marginTop: '1rem' }} disabled={loading}>
-                            {loading ? '注册中...' : '🎉 立即注册'}
+                        <button id="btn-register-submit" type="submit" className="w-full mt-4 py-3 rounded-xl bg-gradient-to-br from-primary to-primary-container text-on-primary font-medium text-sm transition-all duration-300 hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/20" disabled={loading}>
+                            {loading ? '注册中...' : '开启空间'}
                         </button>
                     </form>
                 )}
 
                 <p className="auth-footer-link">
-                    <Link to="/gallery">← 先去挑选心仪模板，看完再注册</Link>
+                    <Link to="/gallery" style={{ color: 'rgba(255,255,255,0.7)' }}>← 先去挑选心仪模板，看完再注册</Link>
                 </p>
             </div>
+        </div>
         </div>
     );
 }

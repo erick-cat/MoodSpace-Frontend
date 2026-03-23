@@ -932,3 +932,64 @@ input:disabled + .slider:before {
     flex-wrap: wrap;
     gap: 0.5rem;
 }
+
+/* ── Builder specific classes ────────────────────────────────────────────── */
+.cosmic-bg {
+    background: radial-gradient(circle at 50% -20%, #24204a 0%, #0d0a27 100%);
+}
+
+.glass-panel {
+    background: rgba(36, 32, 74, 0.4);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+}
+
+.writing-area::placeholder {
+    color: #aca7cc;
+    opacity: 0.3;
+    font-weight: 200;
+}
+
+.floating-glow {
+    box-shadow: 0 0 30px rgba(224, 142, 254, 0.3);
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* ── Seamless Builder Transitions ────────────────────────────────────────── */
+.global-navbar {
+  view-transition-name: global-navbar;
+}
+.global-footer {
+  view-transition-name: global-footer;
+}
+
+html.slide-up-nav {
+  background-color: #0d0a27; /* Prevent white gap */
+}
+html.slide-up-nav::view-transition-old(root) {
+  animation: slideOutUp 0.7s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+html.slide-up-nav::view-transition-new(root) {
+  animation: slideInUp 0.7s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  mix-blend-mode: normal;
+}
+
+@keyframes slideOutUp {
+  to { transform: translateY(-100dvh); }
+}
+@keyframes slideInUp {
+  from { transform: translateY(100dvh); }
+  to { transform: translateY(0); }
+}
+
+.builder-slide-up-fallback {
+  animation: slideInUp 0.7s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}

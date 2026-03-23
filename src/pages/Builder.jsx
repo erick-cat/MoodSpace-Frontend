@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { listTemplates, renderProject, getConfigBySubdomain, getUserStatus, checkDomainAvailability } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -23,6 +23,7 @@ const DEFAULT_VALUES = {
 export default function Builder() {
     const { templateName } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [searchParams] = useSearchParams();
     const { user } = useAuth();
     const editSubdomain = searchParams.get('edit');
@@ -262,12 +263,13 @@ export default function Builder() {
     let previewHtml = '';
     if (rawHtml && selectedTemplate) {
         const baseTag = `<base href="https://www.${BASE_DOMAIN}/assets/${selectedTemplate.name}/" />`;
+        const hideScrollbarStyle = `<style>::-webkit-scrollbar{display:none!important}*{scrollbar-width:none;-ms-overflow-style:none}</style>`;
 
         const headRegex = /<head[^>]*>/i;
         if (headRegex.test(rawHtml)) {
-            previewHtml = rawHtml.replace(headRegex, (match) => `${match}\n  ${baseTag}`);
+            previewHtml = rawHtml.replace(headRegex, (match) => `${match}\n  ${baseTag}\n  ${hideScrollbarStyle}`);
         } else {
-            previewHtml = `${baseTag}\n${rawHtml}`;
+            previewHtml = `${baseTag}\n${hideScrollbarStyle}\n${rawHtml}`;
         }
 
         previewHtml = previewHtml.replace(/\{\{([^}]+)\}\}/g, (match, key) => {
@@ -281,179 +283,172 @@ export default function Builder() {
         });
     }
 
+    // Fallback animation for Safari/older browsers without View Transitions
+    const isFromHomeFallback = location.state?.from === 'home' && !('startViewTransition' in document);
+
     return (
-        <div className="page container" style={{ maxWidth: 1000 }}>
-            <h1 className="section-title">{editSubdomain ? '🛠️ 修改专属网页' : '✏️ 制作专属网页'}</h1>
-            <p className="section-sub">
-                {editSubdomain
-                    ? `正在优化您的专属页面：${editSubdomain}.${BASE_DOMAIN}`
-                    : '填写下方信息后，系统将即时生成带有专属独立网址的浪漫网页。'}
-            </p>
-            {status?.isOverQuota && (
-                <div style={{ background: '#fffbeb', border: '1px solid #fde68a', padding: '16px', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: '1.5rem' }}>⚠️</span>
-                    <div style={{ fontSize: '0.9rem', color: '#92400e', lineHeight: '1.5' }}>
-                        <strong style={{ fontSize: '1rem' }}>进入维护模式</strong><br/>
-                        由于您的配额已到期，您可以继续维护<strong>最近编辑过的一个网页</strong>，但目前只能使用<strong>“免费”模板</strong>进行更新。其他网页已暂时锁定，续费后将立即解锁。建议尽快续费以防止域名被回收。
-                    </div>
-                </div>
-            )}
-            {editSubdomain && status && (
-                <div style={{ padding: '20px', background: '#f8fafc', borderTop: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem', color: '#64748b' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ color: '#0ea5e9' }}>ℹ️</span>
-                        <span>当前为更新页面内容，不消耗建站网址数量配额。</span>
-                    </div>
-                    <div style={{ marginTop: '8px', paddingLeft: '24px' }}>
-                        今日剩余可修改次数：<b style={{ color: '#0f172a' }}>{status.maxDailyEdits - status.dailyUsedEdits} / {status.maxDailyEdits}</b>
-                    </div>
-                </div>
-            )}
+        <div className={`w-full h-[100dvh] cosmic-bg overflow-hidden flex flex-col font-body text-on-surface ${isFromHomeFallback ? 'builder-slide-up-fallback' : 'animate-in fade-in duration-1000 ease-in-out'}`}>
+            <main className="flex-grow w-full max-w-6xl mx-auto h-[calc(100dvh-5rem)] pb-12 pt-24 px-6 md:px-12 flex flex-col lg:flex-row gap-6 lg:gap-10 relative z-10 justify-center">
 
-            {result && (
-                <div className="alert alert--success" style={{ margin: '0 auto 1.5rem' }}>
-                    🎉 {editSubdomain ? '页面更新已生效！' : '页面发布已成功！'}
-                    <div className="alert__actions">
-                        <a href={result.url} target="_blank" rel="noopener noreferrer" className="btn btn--primary btn--sm">
-                            立即访问页面 ↗
-                        </a>
+                {/* Left Panel: Workspace Area */}
+                <section className="flex-1 flex flex-col w-full max-w-2xl mx-auto overflow-hidden h-full relative">
+                    
+                    {/* Header: Title and Gallery Link */}
+                    <div className="flex items-center justify-between mb-4 md:mb-6 shrink-0 pt-2 md:pt-4 w-full z-10 px-1">
+                        <div className="text-on-surface-variant font-headline font-light text-base md:text-lg tracking-wide opacity-80 italic">
+                            {editSubdomain ? '继续雕琢这份心意' : '那我们慢慢把它写下来'}
+                        </div>
+                        <Link
+                            to="/gallery"
+                            className="group flex items-center justify-center gap-1.5 text-secondary-dim hover:text-secondary transition-all font-headline font-light tracking-widest px-4 py-1.5 cursor-pointer rounded-full bg-secondary/5 hover:bg-secondary/10 border border-secondary/20 backdrop-blur-md text-xs shadow-sm whitespace-nowrap"
+                        >
+                            <span className="material-symbols-outlined text-sm group-hover:rotate-12 transition-transform">explore</span>
+                            模板大厅
+                        </Link>
                     </div>
-                </div>
-            )}
 
-            <div className="builder-layout">
-                {/* Left Panel: Form */}
-                <div className="builder-panel-form">
-                    <form onSubmit={handleSubmit} className="builder-card">
-                        {initialLoading && (
-                            <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
-                                <div className="spinner" style={{ marginBottom: '10px' }}></div>
-                                <div>正在获取模板列表...</div>
-                            </div>
-                        )}
-
-                        {!initialLoading && (
-                            <>
-                                {/* Template selector */}
-                                <div className="form-group">
-                                    <label htmlFor="template">📦 选择网页模板</label>
-                                    <select
-                                        id="template"
-                                        value={selectedTemplate?.name ?? ''}
-                                        onChange={handleTemplateChange}
-                                        required
-                                    >
-                                        <option value="">-- 请先选择模板 --</option>
-                                        {templates.map((t) => (
-                                            <option key={t.name} value={t.name}>
-                                                {t.tier === 'pro' ? '[PRO] ' : ''}{t.title || t.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {selectedTemplate?.price > 0 && (
-                                        <div style={{ marginTop: '8px', padding: '8px 12px', background: 'var(--primary-light)', borderRadius: '8px', border: '1px dashed var(--primary-dark)', fontSize: '0.75rem', color: 'var(--primary-dark)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span>💎 <strong>单独买断价格:</strong> ¥{selectedTemplate.price}</span>
-                                            <span style={{ opacity: 0.6, fontSize: '0.65rem' }}>暂未开放支付</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Subdomain */}
-                                <div className="form-group">
-                                    <label htmlFor="subdomain">🌐 专属网址 {editSubdomain && <span style={{ color: '#64748b', fontWeight: 400 }}>(不可修改)</span>}</label>
-                                    <div className="input-row">
-                                        <input
-                                            id="subdomain"
-                                            type="text"
-                                            value={subdomain}
-                                            onChange={(e) => !editSubdomain && setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                                            placeholder="例如：our-love-story"
-                                            required
-                                            readOnly={!!editSubdomain}
-                                            style={editSubdomain ? { background: '#f8fafc', color: '#64748b' } : {}}
-                                        />
-                                        <span className="input-suffix">.{BASE_DOMAIN}</span>
+                    <form id="builder-form" onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 w-full relative z-10 px-1">
+                        
+                        {/* Fixed Top Controls & Warnings */}
+                        <div className="flex flex-col gap-4 md:gap-6 shrink-0 w-full mb-4 md:mb-6">
+                            
+                            {/* Status Warnings */}
+                            {status?.isOverQuota && (
+                                <div className="bg-error-container/20 border border-error-dim/40 p-4 rounded-xl flex gap-3 items-start animate-in fade-in">
+                                    <span className="text-2xl">⚠️</span>
+                                    <div className="text-sm text-error-dim leading-relaxed">
+                                        <strong className="text-base text-error">进入维护模式</strong><br />
+                                        由于您的配额已到期，您可以继续维护<strong>最近编辑过的一个网页</strong>，但目前只能使用<strong>“免费”模板</strong>进行更新。其他网页已暂时锁定，续费后将立即解锁。建议尽快续费以防止域名被回收。
                                     </div>
-                                    {!editSubdomain && (
-                                        <div style={{ fontSize: '0.82rem', color: '#f43f5e', marginTop: '6px', fontWeight: 500 }}>
-                                            ⚠️ 专属网址一经创建永久绑定，无法修改或删除，请慎重填写！
-                                        </div>
-                                    )}
-                                    {!editSubdomain && domainStatus !== 'idle' && (
-                                        <div style={{
-                                            fontSize: '0.8rem',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '6px',
-                                            marginTop: '6px',
-                                            color: domainStatus === 'available' ? '#10b981' :
-                                                   domainStatus === 'checking' ? '#64748b' : '#ef4444'
-                                        }}>
-                                            {domainStatus === 'checking' && <div className="spinner" style={{ width: '12px', height: '12px', borderWidth: '2px' }}></div>}
-                                            {domainMsg}
-                                        </div>
-                                    )}
-                                    <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
-                                        💡 推荐：使用你们的名字缩写或纪念日
-                                    </p>
-                                    {editSubdomain && (
-                                        <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
-                                            💡 更新内容不消耗账号额度。
-                                            {/* This line is now redundant as the info box above covers it. */}
-                                        </p>
-                                    )}
+                                </div>
+                            )}
+
+                            {editSubdomain && status && (
+                                <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl flex gap-3 items-start text-on-surface-variant">
+                                    <span className="text-xl text-primary-dim">ℹ️</span>
+                                    <div className="text-sm">
+                                        当前为更新页面内容，不消耗建站网址数量配额。<br />
+                                        <span className="opacity-80 mt-1 block">今日剩余可修改次数：<span className="text-primary font-bold">{status.maxDailyEdits - status.dailyUsedEdits} / {status.maxDailyEdits}</span></span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Template Selector */}
+                            <div className="group">
+                                <label className="text-xs uppercase tracking-[0.2em] text-primary-dim/60 font-bold mb-3 block">模板选择 | Template</label>
+                                <select
+                                    value={selectedTemplate?.name ?? ''}
+                                    onChange={handleTemplateChange}
+                                    required
+                                    className="w-full bg-transparent border-b border-outline-variant/30 focus:border-primary focus:ring-0 text-lg md:text-xl font-light font-headline py-2 transition-all writing-area text-on-surface appearance-none cursor-pointer"
+                                >
+                                    <option value="" className="bg-surface text-on-surface">-- 请先选择一个模板 --</option>
+                                    {templates.map((t) => (
+                                        <option key={t.name} value={t.name} className="bg-surface text-on-surface">
+                                            {t.tier === 'pro' ? '💎 [PRO] ' : ''}{t.title || t.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {selectedTemplate?.price > 0 && (
+                                    <div className="mt-2 px-3 py-2 bg-primary/10 border border-primary/30 rounded-lg text-xs text-primary-dim flex justify-between">
+                                        <span>💎 <strong>单独买断价格:</strong> ¥{selectedTemplate.price}</span>
+                                        <span className="opacity-60">暂未开放单独支付</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Subdomain Input */}
+                            <div className="group">
+                                <label className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-primary-dim/60 font-bold mb-3">
+                                    专属网址 | Domain
+                                    {editSubdomain && <span className="text-on-surface-variant/50 font-normal lowercase tracking-normal">(不可修改)</span>}
+                                </label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        value={subdomain}
+                                        onChange={(e) => !editSubdomain && setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                                        placeholder="例如：our-love-story"
+                                        required
+                                        readOnly={!!editSubdomain}
+                                        className={`flex-1 bg-transparent border-b ${editSubdomain ? 'border-outline-variant/10 text-on-surface-variant/50 cursor-not-allowed' : 'border-outline-variant/30 focus:border-primary'} focus:ring-0 text-xl md:text-2xl font-light font-headline py-2 transition-all writing-area text-on-surface`}
+                                    />
+                                    <span className="text-on-surface-variant text-base font-light">.{BASE_DOMAIN}</span>
+                                </div>
+                                {!editSubdomain && (
+                                    <>
+                                        <div className="text-xs text-error-dim mt-2 font-medium">⚠️ 专属网址一经创建永久绑定，无法修改或删除！</div>
+                                        {domainStatus !== 'idle' && (
+                                            <div className={`text-xs mt-2 flex items-center gap-2 ${domainStatus === 'available' ? 'text-green-400' : domainStatus === 'checking' ? 'text-on-surface-variant' : 'text-error-dim'}`}>
+                                                {domainStatus === 'checking' && <span className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin"></span>}
+                                                {domainMsg}
+                                            </div>
+                                        )}
+                                        <div className="text-xs text-on-surface-variant mt-1">💡 推荐：使用你们的名字缩写或纪念日 (如 xm-xh-520)</div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Scrollable Dynamic Fields Area container */}
+                        {selectedTemplate && !selectedTemplate.static && (selectedTemplate.fields ?? []).length > 0 && (
+                            <div className="flex-1 flex flex-col bg-surface/30 backdrop-blur-md border border-outline-variant/20 shadow-[inset_0_4px_24px_rgba(0,0,0,0.05)] rounded-2xl mb-[130px] w-full rounded-b-3xl overflow-hidden">
+                                
+                                {/* Fixed Header */}
+                                <div className="p-5 md:p-8 pb-4 shrink-0 border-b border-outline-variant/10">
+                                    <div className="text-primary-dim text-sm font-bold uppercase tracking-widest flex items-center gap-2 opacity-80">
+                                        <span className="material-symbols-outlined text-base">edit_document</span>
+                                        专属内容填写
+                                    </div>
                                 </div>
 
-                                {/* Dynamic fields from schema */}
-                                {selectedTemplate && !selectedTemplate.static && (selectedTemplate.fields ?? []).length > 0 && (
-                                    <>
-                                        <hr className="builder-divider" />
-                                        <p className="builder-section-label">📝 填入你们的专属内容</p>
-                                        {selectedTemplate.fields.map((f) => {
-                                            const key = typeof f === 'string' ? f : (f.id || f.key);
-                                            const label = typeof f === 'string' ? (FIELD_LABELS[f] || f) : (f.label || f.id || f.key);
-                                            const placeholder = typeof f === 'string'
-                                                ? (`请输入 ${FIELD_LABELS[f] || f}`)
-                                                : (f.placeholder || `请输入 ${label}`);
-                                            const inputType = typeof f === 'string' ? 'textarea' : (f.type || 'text');
+                                {/* Scrollable Fields */}
+                                <div className="flex-1 overflow-y-auto scrollbar-hide p-5 md:p-8 pt-6 flex flex-col gap-6 md:gap-8">
+                                    {selectedTemplate.fields.map((f) => {
+                                        const key = typeof f === 'string' ? f : (f.id || f.key);
+                                        const label = typeof f === 'string' ? (FIELD_LABELS[f] || f) : (f.label || f.id || f.key);
+                                        const placeholder = typeof f === 'string'
+                                            ? (`输入 ${FIELD_LABELS[f] || f}...`)
+                                            : (f.placeholder || `输入 ${label}...`);
+                                        const inputType = typeof f === 'string' ? 'textarea' : (f.type || 'text');
 
-                                            return (
-                                                <div className="form-group" key={key}>
-                                                    <label htmlFor={`f-${key}`}>{label}</label>
-                                                    {inputType === 'textarea' ? (
-                                                        <textarea
-                                                            id={`f-${key}`}
-                                                            rows={key === 'paragraphs' ? 4 : 2}
-                                                            value={fieldValues[key] ?? ''}
-                                                            onChange={(e) => setFieldValues((p) => ({ ...p, [key]: e.target.value }))}
-                                                            placeholder={placeholder}
-                                                        />
-                                                    ) : (
-                                                        <input
-                                                            id={`f-${key}`}
-                                                            type="text"
-                                                            value={fieldValues[key] ?? ''}
-                                                            onChange={(e) => setFieldValues((p) => ({ ...p, [key]: e.target.value }))}
-                                                            placeholder={placeholder}
-                                                        />
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                        {/* System Features (Viral Footer) */}
-                                        <hr className="builder-divider" />
-                                        <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '0.5rem 0' }}>
-                                            <label htmlFor="viral-toggle" style={{ marginBottom: 0, cursor: 'pointer', flex: 1 }}>
-                                                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--mid)' }}>📢 显示“制作同款”小挂件</div>
-                                                <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 400, marginTop: '2px' }}>
+                                        return (
+                                            <div className="group shrink-0 relative" key={key}>
+                                                <label className="text-xs uppercase tracking-[0.2em] text-primary-dim/60 font-bold mb-3 block">{label}</label>
+                                                {inputType === 'textarea' ? (
+                                                    <textarea
+                                                        rows={key === 'paragraphs' ? 6 : 3}
+                                                        value={fieldValues[key] ?? ''}
+                                                        onChange={(e) => setFieldValues((p) => ({ ...p, [key]: e.target.value }))}
+                                                        placeholder={placeholder}
+                                                        className="w-full bg-transparent border-b border-outline-variant/30 focus:border-primary focus:ring-0 text-lg md:text-xl font-light font-headline leading-relaxed resize-none writing-area text-on-surface transition-all"
+                                                    />
+                                                ) : (
+                                                    <input
+                                                        type="text"
+                                                        value={fieldValues[key] ?? ''}
+                                                        onChange={(e) => setFieldValues((p) => ({ ...p, [key]: e.target.value }))}
+                                                        placeholder={placeholder}
+                                                        className="w-full bg-transparent border-b border-outline-variant/30 focus:border-primary focus:ring-0 text-xl font-light font-headline py-2 transition-all writing-area text-on-surface"
+                                                    />
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+
+                                    {/* Viral Footer Toggle */}
+                                    <div className="group pt-6 border-t border-outline-variant/10 shrink-0">
+                                        <div className="flex justify-between items-start gap-4">
+                                            <div>
+                                                <label className="text-sm font-bold text-on-surface md:text-base block mb-1">📢 显示“制作同款”按钮</label>
+                                                <div className="text-xs text-on-surface-variant font-light leading-relaxed">
                                                     {status?.allowHideFooter === false
                                                         ? '⚠️ 您的等级需保留此功能以支持我们（默认开启）'
-                                                        : '开启后页面底部将显示一个优雅的“制作同款”悬浮按钮'}
+                                                        : '开启后页面底部将悬浮一个优雅的跳转按钮'}
                                                 </div>
-                                            </label>
-                                            <label className="switch">
+                                            </div>
+                                            <label className="switch mt-1 shrink-0">
                                                 <input
-                                                    id="viral-toggle"
                                                     type="checkbox"
                                                     checked={showViralFooter}
                                                     disabled={status?.allowHideFooter === false}
@@ -462,37 +457,72 @@ export default function Builder() {
                                                 <span className="slider"></span>
                                             </label>
                                         </div>
-                                    </>
-                                )}
-
-                                <div className="builder-submit">
-                                    <button type="submit" className="btn btn--primary" style={{ width: '100%', justifyContent: 'center' }} disabled={loading}>
-                                        {loading ? (editSubdomain ? '正在更新中...' : '全网生成中...') : (editSubdomain ? '✨ 立即保存并更新网页' : '✨ 一键生成我的专属网页')}
-                                    </button>
+                                    </div>
                                 </div>
-                            </>
+                            </div>
                         )}
                     </form>
-                </div>
+                </section>
 
-                {/* Right Panel: Live Preview iframe (BSR) - Mobile Form Factor */}
-                {selectedTemplate && rawHtml && (
-                    <div className="builder-panel-preview">
-                        <div className="mobile-mockup" style={{ transformOrigin: 'top center' }}>
-                            <div style={{ padding: '10px 16px', background: '#fff', borderBottom: '1px solid #f1f5f9', fontSize: '13px', fontWeight: '700', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ color: '#1a1a2e' }}>实时预览</span>
-                                <span style={{ fontSize: '10px', background: '#ff477e', color: 'white', padding: '2px 8px', borderRadius: '12px' }}>LIVE</span>
+                {/* Right Panel: Live Preview iframe (BSR) */}
+                <section className="w-full lg:w-[380px] flex flex-col h-[600px] lg:h-[720px] max-h-[85vh] shrink-0 mx-auto lg:my-auto">
+                    <div className="flex-1 glass-panel rounded-xl overflow-hidden border border-outline-variant/20 relative shadow-2xl flex flex-col group transition-all duration-500 hover:border-primary/30">
+                        {/* Preview Header Overlay */}
+                        <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-surface/90 to-transparent z-10 p-6 pointer-events-none transition-opacity duration-300 group-hover:opacity-40">
+                            <div className="text-[10px] uppercase tracking-[0.2em] text-primary-dim font-bold flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                                Live Space Preview
                             </div>
-                            <iframe
-                                srcDoc={previewHtml}
-                                style={{ flex: 1, width: '100%', height: '100%', border: 'none', background: '#fff' }}
-                                title="Live Preview"
-                                id="preview-iframe"
-                            />
+                        </div>
+
+                        {/* Iframe injection */}
+                        <div className="flex-1 relative bg-black">
+                            {(!selectedTemplate || !rawHtml) ? (
+                                <div className="absolute inset-0 bg-surface/5 flex flex-col items-center justify-center pointer-events-none group-hover:bg-transparent transition-colors duration-500">
+                                    <span className="material-symbols-outlined text-3xl md:text-5xl text-primary/30 mb-2 md:mb-4 group-hover:scale-110 transition-transform">visibility</span>
+                                    <span className="text-on-surface-variant font-light text-sm tracking-widest opacity-80 group-hover:opacity-0 transition-opacity">填写左侧信息实时预览</span>
+                                </div>
+                            ) : (
+                                <iframe
+                                    srcDoc={previewHtml}
+                                    style={{ width: '100%', height: '100%', border: 'none', background: '#000' }}
+                                    title="Live Preview"
+                                    id="preview-iframe"
+                                    className="absolute inset-0 z-0 bg-transparent"
+                                />
+                            )}
                         </div>
                     </div>
-                )}
+                </section>
+
+            </main>
+
+            {/* Fixed Floating Action Bar (Universal Navigation) */}
+            <div className={`fixed bottom-[96px] md:bottom-[100px] left-0 w-full z-40 pointer-events-none`}>
+                <div className="w-full max-w-7xl mx-auto px-6 md:px-12 flex justify-between items-center pointer-events-auto">
+                    <button
+                        onClick={() => location.state?.from === 'gallery' ? navigate('/gallery') : navigate('/', { state: { returnToStep: 2 } })}
+                        className={`group flex items-center justify-center gap-2 text-on-surface hover:text-white transition-all font-headline font-light tracking-widest px-6 py-3 md:px-8 md:py-3.5 cursor-pointer rounded-full bg-surface-container-high/60 hover:bg-surface-container-highest border border-outline-variant/20 backdrop-blur-xl shadow-lg shadow-black/20 text-sm md:text-base`}
+                    >
+                        <span className="material-symbols-outlined text-base md:text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                        上一步
+                    </button>
+
+                    <button
+                        type="submit"
+                        form="builder-form"
+                        disabled={loading || domainStatus === 'checking'}
+                        className="group flex items-center justify-center gap-2 text-primary hover:text-primary-container transition-all font-headline font-medium tracking-widest px-8 py-3 md:px-10 md:py-3.5 rounded-full bg-primary/20 hover:bg-primary/30 border border-primary/30 backdrop-blur-xl shadow-lg shadow-primary/20 disabled:opacity-60 disabled:cursor-not-allowed text-sm md:text-base w-max ease-out duration-500 hover:scale-[1.02] active:scale-95"
+                    >
+                        <span>{loading ? (editSubdomain ? '全网刷新' : '宇宙级生成') : (editSubdomain ? '更新当前宇宙' : '点亮这片星空')}</span>
+                        {!loading && <span className="material-symbols-outlined text-base md:text-lg group-hover:translate-x-1 transition-transform">arrow_forward</span>}
+                    </button>
+                </div>
             </div>
+
+            {/* Decorative Nebula Accents */}
+            <div className="fixed top-1/4 -right-24 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none z-[-1]"></div>
+            <div className="fixed bottom-1/4 -left-24 w-80 h-80 bg-secondary/10 rounded-full blur-[100px] pointer-events-none z-[-1]"></div>
         </div>
     );
 }

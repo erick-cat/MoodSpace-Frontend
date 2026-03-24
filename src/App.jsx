@@ -56,7 +56,7 @@ function Navbar() {
     }
 
     return (
-        <nav className="global-navbar fixed top-0 w-full z-50 flex justify-between items-center px-12 py-6 bg-transparent backdrop-blur-3xl bg-gradient-to-b from-slate-950/50 to-transparent">
+        <nav className="global-navbar fixed top-0 w-full z-50 flex justify-between items-center px-6 md:px-12 py-4 md:py-6 bg-transparent backdrop-blur-3xl bg-gradient-to-b from-slate-950/50 to-transparent">
             <div>
                 <NavLink 
                     to="/" 
@@ -66,13 +66,15 @@ function Navbar() {
                             window.dispatchEvent(new CustomEvent('moodspace-reset-home', { detail: { step: 0 } }));
                         }
                     }} 
-                    className="text-2xl font-light tracking-widest text-indigo-50 dark:text-indigo-100 font-headline leading-relaxed" 
+                    className="text-xl md:text-2xl font-light tracking-widest text-indigo-50 dark:text-indigo-100 font-headline leading-relaxed" 
                     style={{ textDecoration: 'none' }}
                 >
                     Mood Space
                 </NavLink>
             </div>
-            <div className="flex items-center gap-12 leading-relaxed">
+
+            {/* Desktop Links */}
+            <div className="hidden md:flex items-center gap-12 leading-relaxed">
                 <NavLink to="/gallery" className={({ isActive }) => `text-indigo-200 font-medium text-sm tracking-wide ${isActive ? 'border-b border-indigo-400/30' : 'hover:border-b hover:border-indigo-400/30'}`} style={{ textDecoration: 'none' }}>
                     模板大厅
                 </NavLink>
@@ -97,7 +99,7 @@ function Navbar() {
                         </NavLink>
                         {profile?.role === 'admin' && (
                             <NavLink to="/admin" className={({ isActive }) => `text-indigo-200 font-medium text-sm tracking-wide ${isActive ? 'border-b border-indigo-400/30' : 'hover:border-b hover:border-indigo-400/30'}`} id="nav-admin" style={{ textDecoration: 'none' }}>
-                                管理
+                                管理站
                             </NavLink>
                         )}
                     </>
@@ -109,7 +111,65 @@ function Navbar() {
                     </NavLink>
                 )}
             </div>
+
+            {/* Mobile User Icon */}
+            <div className="md:hidden flex items-center">
+                {user ? (
+                    <NavLink to="/myspace" className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-indigo-50">
+                        <span className="material-symbols-outlined text-2xl">account_circle</span>
+                    </NavLink>
+                ) : (
+                    <NavLink to="/auth" className="flex items-center justify-center px-4 py-1.5 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-primary-dim text-xs font-bold">
+                        登录
+                    </NavLink>
+                )}
+            </div>
         </nav>
+    );
+}
+
+function MobileTabBar() {
+    const { user } = useAuth();
+    const location = useLocation();
+
+    // Do not show Tab Bar on Builder or Preview pages to save space
+    const isHidden = location.pathname.includes('/builder') || location.pathname.includes('/preview');
+    if (isHidden) return null;
+
+    return (
+        <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] z-[100] animate-in fade-in slide-in-from-bottom-8 duration-500">
+            <div className="bg-slate-900/40 backdrop-blur-2xl border border-white/10 rounded-3xl p-2 flex justify-around items-center shadow-2xl shadow-black/40">
+                <NavLink 
+                    to="/" 
+                    onClick={(e) => {
+                        if (window.location.pathname === '/') {
+                            e.preventDefault();
+                            window.dispatchEvent(new CustomEvent('moodspace-reset-home', { detail: { step: 0 } }));
+                        }
+                    }}
+                    className={({ isActive }) => `flex flex-col items-center gap-1 py-1.5 px-6 rounded-2xl transition-all ${isActive ? 'bg-primary/20 text-primary-dim' : 'text-slate-400'}`}
+                >
+                    <span className="material-symbols-outlined text-2xl">add_circle</span>
+                    <span className="text-[10px] font-bold tracking-widest">制作</span>
+                </NavLink>
+
+                <NavLink 
+                    to="/gallery" 
+                    className={({ isActive }) => `flex flex-col items-center gap-1 py-1.5 px-6 rounded-2xl transition-all ${isActive ? 'bg-secondary/20 text-secondary-dim' : 'text-slate-400'}`}
+                >
+                    <span className="material-symbols-outlined text-2xl">explore</span>
+                    <span className="text-[10px] font-bold tracking-widest">大厅</span>
+                </NavLink>
+
+                <NavLink 
+                    to="/myspace" 
+                    className={({ isActive }) => `flex flex-col items-center gap-1 py-1.5 px-6 rounded-2xl transition-all ${isActive ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400'}`}
+                >
+                    <span className="material-symbols-outlined text-2xl">person</span>
+                    <span className="text-[10px] font-bold tracking-widest">我的</span>
+                </NavLink>
+            </div>
+        </div>
     );
 }
 
@@ -160,7 +220,7 @@ function GlobalFooter() {
     }, []);
 
     return (
-        <footer className={`global-footer fixed bottom-0 left-0 w-full flex flex-col md:flex-row justify-between items-center z-50 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] border-t ${!isSlim || isHidden ? 'pointer-events-none' : 'pointer-events-auto'} ${isHidden ? 'translate-y-full opacity-0 bg-transparent border-transparent' : !isSlim ? 'py-8 md:py-12 px-8 md:px-12 bg-transparent border-transparent' : 'py-4 md:py-6 px-6 md:px-12 bg-surface border-outline-variant/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)]'}`}>
+        <footer className={`global-footer hidden md:flex fixed bottom-0 left-0 w-full flex-col md:flex-row justify-between items-center z-50 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] border-t ${!isSlim || isHidden ? 'pointer-events-none' : 'pointer-events-auto'} ${isHidden ? 'translate-y-full opacity-0 bg-transparent border-transparent' : !isSlim ? 'py-8 md:py-12 px-8 md:px-12 bg-transparent border-transparent' : 'py-4 md:py-6 px-6 md:px-12 bg-surface border-outline-variant/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)]'}`}>
             <div className={`font-light font-headline tracking-widest pointer-events-auto transition-all duration-700 ${!isSlim ? 'text-indigo-100/60 text-sm md:text-lg mb-4 md:mb-0' : 'text-indigo-100/40 text-xs md:text-sm mb-2 md:mb-0'}`}>
                 每一种情绪，都有属于它的空间
             </div>
@@ -206,6 +266,7 @@ export default function App() {
                     <Route path="/preview/:templateName" element={<Preview />} />
                 </Routes>
             </Suspense>
+            <MobileTabBar />
             <GlobalFooter />
         </AuthProvider>
     );

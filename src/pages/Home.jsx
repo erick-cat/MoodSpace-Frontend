@@ -147,17 +147,17 @@ export default function Home() {
                 style={{ transform: `translateY(-${activeScreen * 100}dvh)` }}
             >
                 {/* ─── SCREEN 0: Hero Intent Selection ─── */}
-                <div className="w-full h-[100dvh] shrink-0 flex flex-col items-center justify-between relative pt-20">
+                <div className="w-full h-[100dvh] shrink-0 flex flex-col items-center relative pt-20 md:pt-0 pb-32 md:pb-0 overflow-y-auto md:overflow-hidden custom-scrollbar">
                     <div className="absolute top-1/4 -left-20 w-[800px] h-[800px] rounded-full pointer-events-none z-0" style={{ background: 'radial-gradient(circle, rgba(224,142,254,0.15) 0%, transparent 60%)' }}></div>
                     <div className="absolute bottom-1/4 -right-20 w-[700px] h-[700px] rounded-full pointer-events-none z-0" style={{ background: 'radial-gradient(circle, rgba(144,148,250,0.15) 0%, transparent 60%)' }}></div>
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vw] h-[100vh] pointer-events-none z-0" style={{ background: 'radial-gradient(ellipse at center, rgba(36,32,74,0.4) 0%, transparent 60%)' }}></div>
                     
-                    <main className="relative z-10 w-full flex-grow flex flex-col items-center justify-center">
-                        <div className="text-center max-w-4xl px-6 mb-20 leading-relaxed mt-[-40px]">
-                            <h1 className="font-headline text-5xl md:text-7xl lg:text-8xl font-light tracking-tight text-on-surface mb-8 leading-tight">
+                    <main className="relative z-10 w-full flex flex-col items-center justify-start md:justify-center flex-1">
+                        <div className="text-center max-w-4xl px-6 mb-12 md:mb-20 leading-relaxed mt-[-40px]">
+                            <h1 className="font-headline text-3xl md:text-7xl lg:text-8xl font-light tracking-tight text-on-surface mb-6 md:mb-8 leading-tight">
                                 有些情绪，值得被<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">认真安放</span>
                             </h1>
-                            <p className="font-body text-lg md:text-2xl text-on-surface-variant font-light tracking-wide max-w-2xl mx-auto">
+                            <p className="font-body text-base md:text-2xl text-on-surface-variant font-light tracking-wide max-w-2xl mx-auto">
                                 顺着心的指引，点击最契合你当下的选择
                             </p>
                         </div>
@@ -200,7 +200,6 @@ export default function Home() {
                             </button>
                         </div>
                     </main>
-                    <div className="w-full h-24 shrink-0"></div> {/* Spacer to replace footer in flow */}
                 </div>
 
                 {/* ─── SCREEN 1: Scene Selection Options ─── */}
@@ -208,10 +207,10 @@ export default function Home() {
 
                     <main className="flex-grow flex flex-col items-center justify-start px-6 md:px-12 max-w-5xl mx-auto w-full">
                         <header className="text-center mb-10 md:mb-16 space-y-4 md:space-y-6">
-                            <h2 className="font-headline text-3xl md:text-5xl lg:text-6xl font-light tracking-tight text-on-surface opacity-90 transition-all">
+                            <h2 className="font-headline text-2xl md:text-5xl lg:text-6xl font-light tracking-tight text-on-surface opacity-90 transition-all">
                                 {currentIntent.title}
                             </h2>
-                            <p className="text-lg md:text-xl lg:text-2xl font-light text-on-surface-variant tracking-wide">
+                            <p className="text-base md:text-xl lg:text-2xl font-light text-on-surface-variant tracking-wide">
                                 {currentIntent.subtitle}
                             </p>
                         </header>
@@ -336,7 +335,7 @@ export default function Home() {
             </div>
 
             {/* Fixed Floating Action Bar (Screens 1 & 2) */}
-            <div className={`fixed bottom-[96px] md:bottom-[100px] left-0 w-full z-40 pointer-events-none transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] transform ${activeScreen > 0 && activeScreen < 3 ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+            <div className={`fixed bottom-[140px] md:bottom-[100px] left-0 w-full z-40 pointer-events-none transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] transform ${activeScreen > 0 && activeScreen < 3 ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
                 <div className="w-full max-w-[1600px] mx-auto px-6 md:px-12 flex justify-between items-center pointer-events-auto">
                     <button 
                         onClick={() => setActiveScreen(Math.max(0, activeScreen - 1))}

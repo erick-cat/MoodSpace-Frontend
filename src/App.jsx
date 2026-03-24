@@ -63,7 +63,7 @@ function Navbar() {
                     onClick={(e) => {
                         if (window.location.pathname === '/') {
                             e.preventDefault();
-                            window.dispatchEvent(new CustomEvent('moodspace-reset-home'));
+                            window.dispatchEvent(new CustomEvent('moodspace-reset-home', { detail: { step: 0 } }));
                         }
                     }} 
                     className="text-2xl font-light tracking-widest text-indigo-50 dark:text-indigo-100 font-headline leading-relaxed" 
@@ -76,7 +76,18 @@ function Navbar() {
                 <NavLink to="/gallery" className={({ isActive }) => `text-indigo-200 font-medium text-sm tracking-wide ${isActive ? 'border-b border-indigo-400/30' : 'hover:border-b hover:border-indigo-400/30'}`} style={{ textDecoration: 'none' }}>
                     模板大厅
                 </NavLink>
-                <NavLink to="/builder" className={({ isActive }) => `text-indigo-200 font-medium text-sm tracking-wide ${isActive ? 'border-b border-indigo-400/30' : 'hover:border-b hover:border-indigo-400/30'}`} style={{ textDecoration: 'none' }}>
+                <NavLink 
+                    to="/" 
+                    state={{ returnToStep: 0 }}
+                    onClick={(e) => {
+                        if (window.location.pathname === '/') {
+                            e.preventDefault();
+                            window.dispatchEvent(new CustomEvent('moodspace-reset-home', { detail: { step: 0 } }));
+                        }
+                    }} 
+                    className="text-indigo-200 font-medium text-sm tracking-wide hover:border-b hover:border-indigo-400/30" 
+                    style={{ textDecoration: 'none' }}
+                >
                     制作
                 </NavLink>
                 {user ? (
@@ -135,8 +146,6 @@ function GlobalFooter() {
         handleRouteAndScroll();
         window.addEventListener('scroll', handleRouteAndScroll);
         
-        // Listen to react-router pushState / popstate indirectly by polling or depending on a top level location
-        // We'll trust the component remounting or just use scroll for now.
         return () => window.removeEventListener('scroll', handleRouteAndScroll);
     }, [location.pathname]);
 
@@ -151,7 +160,7 @@ function GlobalFooter() {
     }, []);
 
     return (
-        <footer className={`global-footer fixed bottom-0 left-0 w-full flex flex-col md:flex-row justify-between items-center z-50 pointer-events-none transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] border-t ${isHidden ? 'translate-y-full opacity-0 bg-transparent border-transparent' : !isSlim ? 'py-8 md:py-12 px-8 md:px-12 bg-transparent border-transparent' : 'py-4 md:py-6 px-6 md:px-12 bg-surface/30 backdrop-blur-md border-outline-variant/10 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]'}`}>
+        <footer className={`global-footer fixed bottom-0 left-0 w-full flex flex-col md:flex-row justify-between items-center z-50 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] border-t ${!isSlim || isHidden ? 'pointer-events-none' : 'pointer-events-auto'} ${isHidden ? 'translate-y-full opacity-0 bg-transparent border-transparent' : !isSlim ? 'py-8 md:py-12 px-8 md:px-12 bg-transparent border-transparent' : 'py-4 md:py-6 px-6 md:px-12 bg-surface border-outline-variant/20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)]'}`}>
             <div className={`font-light font-headline tracking-widest pointer-events-auto transition-all duration-700 ${!isSlim ? 'text-indigo-100/60 text-sm md:text-lg mb-4 md:mb-0' : 'text-indigo-100/40 text-xs md:text-sm mb-2 md:mb-0'}`}>
                 每一种情绪，都有属于它的空间
             </div>

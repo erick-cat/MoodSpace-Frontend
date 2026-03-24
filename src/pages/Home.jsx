@@ -162,7 +162,7 @@ export default function Home() {
                             </p>
                         </div>
                         
-                        <div className="w-full max-w-7xl px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 md:gap-6 mb-16 leading-relaxed">
+                        <div className="w-full max-w-[1600px] px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 md:gap-6 mb-16 leading-relaxed">
                             <button onClick={() => handleIntentClick('confession')} className="glass-card p-6 md:p-8 rounded-xl flex flex-col items-center text-center group cursor-pointer transition-all duration-500 hover:-translate-y-3 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)] hover:border-primary/40">
                                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-surface-container flex items-center justify-center mb-4 md:mb-6 group-hover:bg-primary/20 transition-colors">
                                     <span className="material-symbols-outlined text-2xl md:text-3xl text-primary" data-icon="mail">mail</span>
@@ -264,7 +264,7 @@ export default function Home() {
                 {/* ─── SCREEN 2: Template Recommendations ─── */}
                 <div className="w-full h-[100dvh] shrink-0 pt-24 pb-48 flex flex-col relative z-20 overflow-y-auto custom-scrollbar">
 
-                    <main className="flex-grow flex flex-col items-center justify-start px-8 max-w-7xl mx-auto w-full">
+                    <main className="flex-grow flex flex-col items-center justify-start px-8 max-w-[1600px] mx-auto w-full">
                         
                         <section className="mb-12 md:mb-16 w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
@@ -337,7 +337,7 @@ export default function Home() {
 
             {/* Fixed Floating Action Bar (Screens 1 & 2) */}
             <div className={`fixed bottom-[96px] md:bottom-[100px] left-0 w-full z-40 pointer-events-none transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] transform ${activeScreen > 0 && activeScreen < 3 ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-                <div className="w-full max-w-7xl mx-auto px-6 md:px-12 flex justify-between items-center pointer-events-auto">
+                <div className="w-full max-w-[1600px] mx-auto px-6 md:px-12 flex justify-between items-center pointer-events-auto">
                     <button 
                         onClick={() => setActiveScreen(Math.max(0, activeScreen - 1))}
                         disabled={activeScreen === 0}

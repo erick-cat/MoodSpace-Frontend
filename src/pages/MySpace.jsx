@@ -7,6 +7,25 @@ import { getUserStatus } from '../api/client.js';
 
 const BASE_DOMAIN = import.meta.env.VITE_BASE_DOMAIN || 'moodspace.xyz';
 
+const TEMPLATE_NAMES = {
+    'starry_confession': '星空告白',
+    'love_letter': '情书时代',
+    'neon_heart': '霓虹心跳',
+    'rainy_apology': '雨夜低语',
+    'warm_light': '微光倾听',
+    'broken_glass': '时光拼图',
+    'golden_memories': '流金岁月',
+    'celebration_fireworks': '花火灿烂',
+    'polaroid_wall': '拍立得影集',
+    'vintage_film': '复古胶卷',
+    'breeze_diary': '微风手账',
+    'constellation_map': '星轨连线',
+    'minimal_white': '极简白纸',
+    'lofi_room': 'Lofi 房间',
+    'sunset_glow': '落日余晖',
+    'custom': '自定义页面'
+};
+
 export default function MySpace() {
     const { user, profile, loading, signOut, setProfile } = useAuth();
     const navigate = useNavigate();
@@ -158,7 +177,7 @@ export default function MySpace() {
                 <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 80% 20%, rgba(224, 142, 254, 0.08) 0%, transparent 40%), radial-gradient(circle at 10% 80%, rgba(144, 148, 250, 0.1) 0%, transparent 50%)' }} />
             </div>
 
-            <main className="pt-32 pb-24 px-6 md:px-12 max-w-7xl mx-auto min-h-screen flex flex-col">
+            <main className="pt-32 pb-24 px-6 md:px-12 max-w-[1600px] mx-auto min-h-screen flex flex-col">
                 <div className="flex flex-col lg:flex-row gap-8 flex-1">
                     
                     <aside className="lg:w-[350px] flex-shrink-0 space-y-6">
@@ -230,13 +249,13 @@ export default function MySpace() {
                                                 </linearGradient>
                                             </defs>
                                         </svg>
-                                        <span className="absolute text-[13px] font-headline font-bold text-on-surface flex flex-col items-center leading-none">
-                                            <span>{status.count}</span><span className="text-[9px] text-on-surface-variant font-medium">/{status.maxDomains}</span>
+                                        <span className="absolute text-sm font-headline font-bold text-on-surface flex items-baseline leading-none">
+                                            <span>{status.count}</span><span className="text-[10px] text-on-surface-variant font-medium ml-0.5">/{status.maxDomains}</span>
                                         </span>
                                     </div>
                                     <div className="flex flex-col justify-center">
                                         <p className="text-sm text-on-surface font-medium leading-none mb-1.5">已创建空间</p>
-                                        {status.inviteBonus > 0 && <p className="text-primary-dim text-[10px] font-medium leading-none">邀请奖励 +{status.inviteBonus}</p>}
+                                        {status.inviteBonus > 0 && <p className="text-primary-dim text-xs font-medium leading-none">邀请奖励 +{status.inviteBonus}</p>}
                                     </div>
                                 </div>
 
@@ -246,13 +265,13 @@ export default function MySpace() {
                                             <circle cx="32" cy="32" fill="transparent" r="28" stroke="#1e1a41" strokeWidth="5"></circle>
                                             <circle cx="32" cy="32" fill="transparent" r="28" stroke="#9094fa" strokeDasharray="175.93" strokeDashoffset={175.93 - (175.93 * Math.min(1, status.dailyUsedEdits / status.maxDailyEdits))} strokeLinecap="round" strokeWidth="5"></circle>
                                         </svg>
-                                        <span className="absolute text-[13px] font-headline font-bold text-on-surface flex flex-col items-center leading-none">
+                                        <span className="absolute text-sm font-headline font-bold text-on-surface flex items-center justify-center leading-none">
                                             <span>{Math.round((status.dailyUsedEdits / status.maxDailyEdits) * 100)}%</span>
                                         </span>
                                     </div>
                                     <div className="flex flex-col justify-center">
                                         <p className="text-sm text-on-surface font-medium leading-none mb-1.5">今日交互消耗</p>
-                                        <p className="text-secondary text-[10px] font-medium leading-none">剩余 {Math.max(0, status.maxDailyEdits - status.dailyUsedEdits)} 次修改</p>
+                                        <p className="text-secondary text-xs font-medium leading-none">剩余 {Math.max(0, status.maxDailyEdits - status.dailyUsedEdits)} 次修改</p>
                                     </div>
                                 </div>
                             </div>
@@ -277,12 +296,11 @@ export default function MySpace() {
                         </div>
 
                         <div className="glass-card rounded-lg p-6 bg-surface-container-low/40 backdrop-blur-xl border border-outline-variant/10">
-                            <h3 className="text-base font-headline font-bold mb-4 text-on-surface">邀请奖励</h3>
+                            <h3 className="text-base font-headline font-bold mb-4 text-on-surface">专属邀请码</h3>
                             {inviteCode ? (
                                 <div className="space-y-4">
-                                    <div className="bg-black/20 p-3 rounded-xl border border-outline-variant/10">
-                                        <label className="text-xs text-on-surface-variant uppercase tracking-widest mb-2 block">专属邀请码</label>
-                                        <div className="flex items-center justify-between">
+                                    <div>
+                                        <div className="bg-black/20 p-3 rounded-xl border border-outline-variant/10 flex items-center justify-between">
                                             <span className="font-headline font-bold text-secondary-fixed tracking-widest text-lg">{inviteCode}</span>
                                             <button 
                                                 onClick={() => {
@@ -394,7 +412,9 @@ export default function MySpace() {
                                                 </div>
                                                 <div className={`p-5 flex flex-col flex-1 justify-between ${viewMode === 'list' && 'py-4'}`}>
                                                     <div className="overflow-hidden">
-                                                        <h4 className="text-xl font-headline font-semibold mb-1 text-on-surface truncate">{p.template_type === 'custom' ? '自定义页面' : p.template_type}</h4>
+                                                        <h4 className="text-xl font-headline font-semibold mb-1 text-on-surface truncate">
+                                                            {TEMPLATE_NAMES[p.template_type] || p.template_type}
+                                                        </h4>
                                                         <p className="text-sm text-on-surface-variant truncate block w-full tracking-wide">{p.subdomain}.{BASE_DOMAIN}</p>
                                                     </div>
                                                     <div className={`flex items-center justify-between border-t border-outline-variant/10 shrink-0 ${viewMode === 'grid' ? 'mt-4 pt-4' : 'mt-2 pt-2'}`}>
@@ -424,11 +444,11 @@ export default function MySpace() {
                                     })}
 
                                     {!loadingProjects && (
-                                        <Link to="/" className={`border border-dashed border-outline-variant/30 bg-surface-container-low/10 rounded-lg flex flex-col items-center justify-center text-on-surface-variant hover:border-primary/40 hover:bg-primary/5 hover:text-on-surface transition-all group shadow-sm ${viewMode === 'grid' ? 'h-[280px]' : 'h-32'}`}>
+                                        <Link to="/gallery" className={`border border-dashed border-outline-variant/30 bg-surface-container-low/10 rounded-lg flex flex-col items-center justify-center text-on-surface-variant hover:border-primary/40 hover:bg-primary/5 hover:text-on-surface transition-all group shadow-sm ${viewMode === 'grid' ? 'h-[280px]' : 'h-32'}`}>
                                             <div className="w-14 h-14 rounded-full bg-surface-container-high/60 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-primary/20 transition-all border border-outline-variant/10">
                                                 <span className="material-symbols-outlined text-3xl group-hover:text-primary transition-colors">add</span>
                                             </div>
-                                            <span className="font-headline font-medium text-base tracking-wide">前往首页选择模板</span>
+                                            <span className="font-headline font-medium text-base tracking-wide">前往模板大厅创建空间</span>
                                         </Link>
                                     )}
                                 </div>

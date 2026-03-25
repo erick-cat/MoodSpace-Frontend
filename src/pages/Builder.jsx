@@ -49,6 +49,22 @@ export default function Builder() {
     // Mobile States
     const [activeTab, setActiveTab] = useState('template'); // 'template', 'content', 'publish'
     const [isSheetOpen, setIsSheetOpen] = useState(true);
+    const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+    const [focusedField, setFocusedField] = useState(null);
+    const [previewBaseHtml, setPreviewBaseHtml] = useState('');
+
+    // Keyboard Detection
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.visualViewport) {
+                // If keyboard is up, visual viewport height is significantly less than window height
+                const isUp = window.visualViewport.height < window.innerHeight * 0.85;
+                setIsKeyboardVisible(isUp);
+            }
+        };
+        window.visualViewport?.addEventListener('resize', handleResize);
+        return () => window.visualViewport?.removeEventListener('resize', handleResize);
+    }, []);
 
     // Mobile Gesture State
     const [touchStartY, setTouchStartY] = useState(null);
@@ -68,11 +84,11 @@ export default function Builder() {
         if (!isDragging || touchStartY === null) return;
         const currentY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
         const delta = touchStartY - currentY;
-        
+
         // Snap logic: if swipe is significant, toggle state
         if (delta > 80) setIsSheetOpen(true);
         else if (delta < -80) setIsSheetOpen(false);
-        
+
         setIsDragging(false);
         setTouchStartY(null);
         setDragOffset(0);
@@ -314,47 +330,118 @@ export default function Builder() {
         }
     }
 
-    // --- BSR Real-time Preview Generation ---
-    let previewHtml = '';
-    if (rawHtml && selectedTemplate) {
-        const baseTag = `<base href="https://www.${BASE_DOMAIN}/assets/${selectedTemplate.name}/" />`;
-        const hideScrollbarStyle = `<style>::-webkit-scrollbar{display:none!important}*{scrollbar-width:none;-ms-overflow-style:none}</style>`;
-
-        const headRegex = /<head[^>]*>/i;
-        if (headRegex.test(rawHtml)) {
-            previewHtml = rawHtml.replace(headRegex, (match) => `${match}\n  ${baseTag}\n  ${hideScrollbarStyle}`);
-        } else {
-            previewHtml = `${baseTag}\n${hideScrollbarStyle}\n${rawHtml}`;
+    // --- BSR Real-time Preview Generation (No-Reload Architecture) ---
+    // Effect to generate the BASE HTML for the preview iframe (loaded once per template)
+    useEffect(() => {
+        if (!rawHtml || !selectedTemplate) {
+            setPreviewBaseHtml('');
+            return;
         }
 
-        // Simple, faithful substitution: replace every {{key}} with its raw value.
-        // No wrappers, no modifications — preserves template fidelity 100%.
-        previewHtml = previewHtml.replace(/\{\{([^}]+)\}\}/g, (match, key) => {
+        const baseTag = `<base href="https://www.${BASE_DOMAIN}/assets/${selectedTemplate.name}/" />`;
+        const runtimeStyles = `<style>
+            ::-webkit-scrollbar{display:none!important}
+            *{scrollbar-width:none;-ms-overflow-style:none}
+            .bsr-marker{display:inline-block;min-height:1em;min-width:1px;transition:all 0.3s ease;}
+            body { padding-top: 100px !important; padding-bottom: 80vh !important; }
+        </style>`;
+
+        let html = rawHtml;
+        const headRegex = /<head[^>]*>/i;
+        if (headRegex.test(html)) {
+            html = html.replace(headRegex, (m) => m + '\n' + baseTag + '\n' + runtimeStyles);
+        } else {
+            html = baseTag + '\n' + runtimeStyles + '\n' + html;
+        }
+
+        // Replace placeholders with initial values and markers
+        html = html.replace(/((?:title|href|src|style|class|id)\s*=\s*["']?)?\{\{([^}]+)\}\}(["']?)?/gi, (match, attrBefore, key, attrAfter) => {
             const k = key.trim();
-            if (fieldValues[k] !== undefined) return fieldValues[k];
-            if (DEFAULT_VALUES[k] !== undefined) return DEFAULT_VALUES[k];
-            return ''; // Always replace with empty string to prevent 404s
+            const val = fieldValues[k] !== undefined ? fieldValues[k] : (DEFAULT_VALUES[k] || '');
+            if (attrBefore || attrAfter) return (attrBefore || '') + val + (attrAfter || '');
+            return `<span data-field="${k}" class="bsr-marker">${val || '&nbsp;'}</span>`;
         });
 
-        // Inject ONLY the scroll-listener script for the mobile auto-scroll feature.
-        // This is a pure event listener and does NOT touch any template DOM or variables.
-        const scrollScript = '<script>window.addEventListener("message",function(e){if(e.data&&e.data.type==="bsr-scroll"){var el=document.getElementById(e.data.field)||document.querySelector("[data-field=\'"+(e.data.field)+"\']");if(el){var t=el.getBoundingClientRect().top+window.pageYOffset-100;window.scrollTo({top:t,behavior:"smooth"})}}})</' + '/script>';
-        previewHtml = previewHtml.includes('</body>') ? previewHtml.replace('</body>', scrollScript + '</body>') : previewHtml + scrollScript;
-    }
+        const runtimeScript = `
+        <script>
+            window.RS_FOCUSED_FIELD = ${JSON.stringify(focusedField)};
+            
+            function handleScroll(field) {
+                if(!field) return;
+                var el = document.querySelector("[data-field='" + field + "']") || 
+                         document.querySelector("[data_text='" + field + "']") || 
+                         document.getElementById(field);
+                if(el) {
+                    var modal = el.closest(".modal") || el.closest("[role='dialog']");
+                    if(modal) modal.classList.add("is_open");
+                    
+                    // Calculate precise position with offset to avoid top nav overlap
+                    var rect = el.getBoundingClientRect();
+                    var absoluteTop = window.pageYOffset + rect.top;
+                    // Lower offset on screen: scroll to (absoluteTop - center - margin)
+                    // On mobile (H < 800), use a larger offset (80px) to clear floating UI
+                    var offset = window.innerHeight < 800 ? 80 : 40;
+                    var target = absoluteTop - (window.innerHeight / 2) + (rect.height / 2) - offset;
+                    window.scrollTo({ top: target, behavior: 'smooth' });
+                }
+            }
+
+            function updateContent(values) {
+                for (var k in values) {
+                    var val = values[k];
+                    var elements = document.querySelectorAll("[data-field='" + k + "'], [data_text='" + k + "']");
+                    elements.forEach(function(el) {
+                        try {
+                            if (el.tagName === 'IMG') {
+                                el.src = val;
+                            } else if (el.classList.contains('bsr-marker')) {
+                                el.textContent = val || ' ';
+                            } else {
+                                el.innerText = val || ' ';
+                            }
+                        } catch(e) {}
+                    });
+                }
+            }
+
+            window.addEventListener("message", function(e) {
+                if(!e.data) return;
+                if(e.data.type === "bsr-scroll") handleScroll(e.data.field);
+                if(e.data.type === "bsr-update") updateContent(e.data.values);
+            });
+
+            if(window.RS_FOCUSED_FIELD) {
+                setTimeout(function() { handleScroll(window.RS_FOCUSED_FIELD); }, 100);
+            }
+        </script>`;
+
+        const finalHtml = html.includes('</body>') ? html.replace('</body>', runtimeScript + '</body>') : html + runtimeScript;
+        setPreviewBaseHtml(finalHtml);
+    }, [rawHtml, selectedTemplate?.name]);
+
+    // Effect to Push Real-time Updates to Iframe (No Reload)
+    useEffect(() => {
+        if (iframeRef.current?.contentWindow) {
+            iframeRef.current.contentWindow.postMessage({
+                type: 'bsr-update',
+                values: fieldValues
+            }, '*');
+        }
+    }, [fieldValues]);
 
     // Fallback animation for Safari/older browsers without View Transitions
     const isFromHomeFallback = location.state?.from === 'home' && !('startViewTransition' in document);
 
     return (
         <div className={`w-full h-[100dvh] cosmic-bg overflow-hidden flex flex-col font-body text-on-surface ${isFromHomeFallback ? 'builder-slide-up-fallback' : 'animate-in fade-in duration-1000 ease-in-out'}`}>
-            
+
             {/* ─── DESKTOP VIEW (hidden on mobile) ─── */}
             <div className="hidden lg:flex flex-col h-full w-full">
                 <main className="flex-grow w-full max-w-6xl mx-auto h-[calc(100dvh-5rem)] pb-12 pt-24 px-6 md:px-12 flex flex-col lg:flex-row gap-6 lg:gap-10 relative z-10 justify-center">
 
                     {/* Left Panel: Workspace Area */}
                     <section className="flex-1 flex flex-col w-full max-w-2xl mx-auto overflow-hidden h-full relative">
-                        
+
                         {/* Header: Title and Gallery Link */}
                         <div className="flex items-center justify-between mb-4 md:mb-6 shrink-0 pt-2 md:pt-4 w-full z-10 px-1">
                             <div className="text-on-surface-variant font-headline font-light text-base md:text-lg tracking-wide opacity-80 italic">
@@ -370,10 +457,10 @@ export default function Builder() {
                         </div>
 
                         <form id="builder-form" onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 w-full relative z-10 px-1">
-                            
+
                             {/* Fixed Top Controls & Warnings */}
                             <div className="flex flex-col gap-4 md:gap-6 shrink-0 w-full mb-4 md:mb-6">
-                                
+
                                 {/* Status Warnings */}
                                 {status?.isOverQuota && (
                                     <div className="bg-error-container/20 border border-error-dim/40 p-4 rounded-xl flex gap-3 items-start animate-in fade-in">
@@ -454,7 +541,7 @@ export default function Builder() {
                             {/* Scrollable Dynamic Fields Area container */}
                             {selectedTemplate && !selectedTemplate.static && (selectedTemplate.fields ?? []).length > 0 && (
                                 <div className="flex-1 flex flex-col bg-surface/30 backdrop-blur-md border border-outline-variant/20 shadow-[inset_0_4px_24px_rgba(0,0,0,0.05)] rounded-2xl mb-[130px] w-full rounded-b-3xl overflow-hidden">
-                                    
+
                                     {/* Fixed Header */}
                                     <div className="p-5 md:p-8 pb-4 shrink-0 border-b border-outline-variant/10">
                                         <div className="text-primary-dim text-sm font-bold uppercase tracking-widest flex items-center gap-2 opacity-80">
@@ -481,6 +568,8 @@ export default function Builder() {
                                                             rows={key === 'paragraphs' ? 6 : 3}
                                                             value={fieldValues[key] ?? ''}
                                                             onChange={(e) => setFieldValues((p) => ({ ...p, [key]: e.target.value }))}
+                                                            onFocus={() => { scrollToField(key); setFocusedField(key); }}
+                                                            onBlur={() => setFocusedField(null)}
                                                             placeholder={placeholder}
                                                             className="w-full bg-transparent border-b border-outline-variant/30 focus:border-primary focus:ring-0 text-lg md:text-xl font-light font-headline leading-relaxed resize-none writing-area text-on-surface transition-all"
                                                         />
@@ -489,6 +578,8 @@ export default function Builder() {
                                                             type="text"
                                                             value={fieldValues[key] ?? ''}
                                                             onChange={(e) => setFieldValues((p) => ({ ...p, [key]: e.target.value }))}
+                                                            onFocus={() => { scrollToField(key); setFocusedField(key); }}
+                                                            onBlur={() => setFocusedField(null)}
                                                             placeholder={placeholder}
                                                             className="w-full bg-transparent border-b border-outline-variant/30 focus:border-primary focus:ring-0 text-xl font-light font-headline py-2 transition-all writing-area text-on-surface"
                                                         />
@@ -545,7 +636,8 @@ export default function Builder() {
                                     </div>
                                 ) : (
                                     <iframe
-                                        srcDoc={previewHtml}
+                                        ref={iframeRef}
+                                        srcDoc={previewBaseHtml}
                                         style={{ width: '100%', height: '100%', border: 'none', background: '#000' }}
                                         title="Live Preview"
                                         id="preview-iframe"
@@ -588,11 +680,11 @@ export default function Builder() {
 
             {/* ─── MOBILE VIEW (hidden on desktop) ─── */}
             <div className="lg:hidden flex flex-col h-full w-full relative">
-                
+
                 {/* Mobile Top Header */}
                 <header className={`fixed top-0 w-full z-50 flex items-center justify-between px-6 h-16 bg-surface/60 backdrop-blur-2xl transition-transform duration-500 ${!isSheetOpen ? '-translate-y-full' : 'translate-y-0'}`}>
                     <div className="flex items-center gap-4">
-                        <button 
+                        <button
                             onClick={() => {
                                 const from = location.state?.from;
                                 if (from === 'gallery') navigate('/gallery');
@@ -619,27 +711,27 @@ export default function Builder() {
                 </header>
 
                 {/* Mobile Live Preview (Proportional Phone Frame) */}
-                <main 
+                <main
                     className="flex-grow flex items-center justify-center relative overflow-hidden h-full pt-20 pb-24"
                     onClick={() => !isSheetOpen && setIsSheetOpen(true)}
                 >
                     <div className="absolute inset-0 bg-surface-dim z-0 pointer-events-none"></div>
-                    
-                    <div 
-                        className="relative z-10 flex items-center justify-center w-full h-full px-4 pb-12"
+
+                    <div
+                        className={`relative z-10 flex items-center justify-center w-full h-full px-4 pb-12 transition-transform duration-500 ${(isKeyboardVisible || (isSheetOpen && activeTab === 'content')) ? '-translate-y-48' : 'translate-y-0'}`}
                     >
                         <div className="w-full max-w-[360px] aspect-[9/19.5] max-h-[82vh] rounded-[3rem] overflow-hidden border-4 border-white/20 shadow-[0_40px_80px_rgba(0,0,0,0.8)] relative bg-black">
-                             {(!selectedTemplate || !rawHtml) ? (
+                            {(!selectedTemplate || !rawHtml) ? (
                                 <div className="absolute inset-0 bg-surface/90 flex flex-col items-center justify-center p-8 text-center backdrop-blur-sm">
                                     <span className="material-symbols-outlined text-5xl text-primary/40 mb-6 animate-pulse">edit_document</span>
                                     <span className="text-on-surface-variant font-light text-base tracking-widest leading-relaxed opacity-80">
-                                        选择模板并输入文字<br/>实时见证星空绽放
+                                        选择模板并输入文字<br />实时见证星空绽放
                                     </span>
                                 </div>
                             ) : (
                                 <iframe
                                     ref={iframeRef}
-                                    srcDoc={previewHtml}
+                                    srcDoc={previewBaseHtml}
                                     style={{ width: '100%', height: '100%', border: 'none', background: '#000' }}
                                     title="Mobile Live Preview"
                                     className="absolute inset-0 z-0 bg-transparent"
@@ -650,18 +742,21 @@ export default function Builder() {
                 </main>
 
                 {/* Mobile Draggable Bottom Sheet */}
-                <div 
+                <div
                     style={{
-                        transform: isDragging 
-                            ? `translateY(${isSheetOpen ? -dragOffset : `calc(65vh - 44px - ${dragOffset}px)`})` 
+                        transform: isDragging
+                            ? `translateY(${isSheetOpen ? -dragOffset : `calc(65vh - 44px - ${dragOffset}px)`})`
                             : undefined,
-                        transition: isDragging ? 'none' : 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
+                        // Synchronized transition for smooth feel
+                        transition: isDragging ? 'none' : 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                        // Shrink height when keyboard is visible to keep preview accessible
+                        height: isKeyboardVisible ? '40vh' : '65vh'
                     }}
-                    className={`fixed inset-x-0 bottom-0 z-40 bg-[#120f2f]/95 backdrop-blur-3xl rounded-t-[32px] shadow-[0_-20px_60px_rgba(0,0,0,0.6)] border-t border-white/5 pt-1 flex flex-col h-[65vh]
+                    className={`fixed inset-x-0 bottom-0 z-40 bg-[#120f2f]/95 backdrop-blur-3xl rounded-t-[32px] shadow-[0_-20px_60px_rgba(0,0,0,0.6)] border-t border-white/5 pt-1 flex flex-col transition-[height,transform]
                         ${!isDragging && (isSheetOpen ? 'translate-y-0' : 'translate-y-[calc(100%-44px)]')}`}
                 >
                     {/* Handle Bar (Draggable) */}
-                    <div 
+                    <div
                         className="w-full py-4 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none"
                         onPointerDown={handleTouchStart}
                         onPointerMove={handleTouchMove}
@@ -683,23 +778,36 @@ export default function Builder() {
                                         {selectedTemplate.fields.map((f) => {
                                             const key = typeof f === 'string' ? f : (f.id || f.key);
                                             const label = typeof f === 'string' ? (FIELD_LABELS[f] || f) : (f.label || f.id || f.key);
+                                            const inputType = typeof f === 'string' ? 'textarea' : (f.type || 'text');
                                             return (
                                                 <div className="relative group" key={key}>
                                                     <label className="block text-[10px] text-primary tracking-widest uppercase mb-1 font-semibold">{label}</label>
-                                                    {key === 'paragraphs' ? (
-                                                        <textarea 
+                                                    {key === 'paragraphs' || inputType === 'textarea' ? (
+                                                        <textarea
                                                             value={fieldValues[key] ?? ''}
                                                             onChange={(e) => setFieldValues((p) => ({ ...p, [key]: e.target.value }))}
-                                                            onFocus={() => scrollToField(key)}
+                                                            onFocus={(e) => {
+                                                                scrollToField(key);
+                                                                setFocusedField(key);
+                                                                // Local scroll to ensure focused text area is visible in the sheet
+                                                                setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                                                            }}
+                                                            onBlur={() => setFocusedField(null)}
                                                             className="w-full bg-transparent border-0 border-b-2 border-white/10 py-3 text-lg text-on-surface focus:ring-0 focus:border-primary transition-all resize-none"
                                                             rows="4"
                                                         />
                                                     ) : (
-                                                        <input 
+                                                        <input
                                                             type="text"
                                                             value={fieldValues[key] ?? ''}
                                                             onChange={(e) => setFieldValues((p) => ({ ...p, [key]: e.target.value }))}
-                                                            onFocus={() => scrollToField(key)}
+                                                            onFocus={(e) => {
+                                                                scrollToField(key);
+                                                                setFocusedField(key);
+                                                                // Local scroll to ensure focused input is visible in the sheet
+                                                                setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                                                            }}
+                                                            onBlur={() => setFocusedField(null)}
                                                             className="w-full bg-transparent border-0 border-b-2 border-white/10 py-3 text-lg text-on-surface focus:ring-0 focus:border-primary transition-all"
                                                         />
                                                     )}
@@ -723,7 +831,7 @@ export default function Builder() {
                                 </header>
                                 <div className="grid grid-cols-2 gap-4">
                                     {templates.map((t) => (
-                                        <button 
+                                        <button
                                             key={t.name}
                                             onClick={() => {
                                                 const found = templates.find((tmp) => tmp.name === t.name);
@@ -747,17 +855,17 @@ export default function Builder() {
                                     <h3 className="font-headline text-2xl font-light text-on-surface">发布 & 设置</h3>
                                     <span className="material-symbols-outlined text-primary">rocket_launch</span>
                                 </header>
-                                
+
                                 {/* Merged Settings Section */}
                                 <div className="p-5 rounded-2xl bg-white/5 border border-white/5 space-y-4">
-                                     <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center">
                                         <div className="flex-1 pr-4">
                                             <div className="text-sm font-medium">显示“制作同款”</div>
                                             <div className="text-[10px] text-on-surface-variant font-light mt-0.5">在页面底部加入精致的推广标签</div>
                                         </div>
                                         <label className="relative inline-flex items-center cursor-pointer">
-                                            <input 
-                                                type="checkbox" 
+                                            <input
+                                                type="checkbox"
                                                 className="sr-only peer"
                                                 checked={showViralFooter}
                                                 disabled={status?.allowHideFooter === false}
@@ -771,7 +879,7 @@ export default function Builder() {
                                 <div className="relative group">
                                     <label className="block text-[10px] text-primary tracking-widest uppercase mb-1 font-semibold">专属网址</label>
                                     <div className="flex items-center gap-2 border-b-2 border-white/10 py-3">
-                                        <input 
+                                        <input
                                             type="text"
                                             value={subdomain}
                                             readOnly={!!editSubdomain}
@@ -788,7 +896,7 @@ export default function Builder() {
                                     )}
                                 </div>
 
-                                <button 
+                                <button
                                     onClick={handleSubmit}
                                     disabled={loading || domainStatus === 'checking'}
                                     className="w-full py-5 rounded-2xl bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold shadow-xl shadow-primary/20 transition-all active:scale-[0.98] disabled:opacity-50"
@@ -801,22 +909,25 @@ export default function Builder() {
                 </div>
 
                 {/* Mobile Bottom Navigation Bar (Tab Bar) */}
-                <nav className={`fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-3 bg-[#120f2f]/80 backdrop-blur-3xl rounded-t-[24px] shadow-[0_-20px_40px_rgba(0,0,0,0.4)] border-t border-white/5 transition-transform duration-500 ${!isSheetOpen ? 'translate-y-full' : 'translate-y-0'}`}>
-                    <button 
+                <nav className={`fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-3 bg-[#120f2f]/80 backdrop-blur-3xl rounded-t-[24px] shadow-[0_-20px_40px_rgba(0,0,0,0.4)] border-t border-white/5 transition-transform duration-500 will-change-transform
+                    ${(!isSheetOpen || isKeyboardVisible) ? 'translate-y-full' : 'translate-y-0'}`}
+                    style={{ transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }}
+                >
+                    <button
                         onClick={() => { setActiveTab('template'); setIsSheetOpen(true); }}
                         className={`flex flex-col items-center justify-center p-2 px-6 rounded-2xl transition-all ${activeTab === 'template' ? 'bg-primary/20 text-primary' : 'text-on-surface-variant/60'}`}
                     >
                         <span className="material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${activeTab === 'template' ? 1 : 0}` }}>auto_awesome</span>
                         <span className="text-[10px] tracking-wide uppercase mt-1">模板</span>
                     </button>
-                    <button 
+                    <button
                         onClick={() => { setActiveTab('content'); setIsSheetOpen(true); }}
                         className={`flex flex-col items-center justify-center p-2 px-6 rounded-2xl transition-all ${activeTab === 'content' ? 'bg-primary/20 text-primary' : 'text-on-surface-variant/60'}`}
                     >
                         <span className="material-symbols-outlined" style={{ fontVariationSettings: `'FILL' ${activeTab === 'content' ? 1 : 0}` }}>edit_note</span>
                         <span className="text-[10px] tracking-wide uppercase mt-1">内容</span>
                     </button>
-                    <button 
+                    <button
                         onClick={() => { setActiveTab('publish'); setIsSheetOpen(true); }}
                         className={`flex flex-col items-center justify-center p-2 px-6 rounded-2xl transition-all ${activeTab === 'publish' ? 'bg-primary/20 text-primary' : 'text-on-surface-variant/60'}`}
                     >

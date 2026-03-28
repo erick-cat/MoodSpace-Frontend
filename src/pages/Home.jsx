@@ -89,33 +89,34 @@ export default function Home() {
                 style={{ transform: `translateY(-${activeScreen * 100}dvh)` }}
             >
                 {/* ─── SCREEN 0: Hero Intent Selection ─── */}
-                <div className="w-full h-[100dvh] shrink-0 flex flex-col items-center relative pt-28 md:pt-0 pb-32 md:pb-0 overflow-y-auto md:overflow-hidden custom-scrollbar">
+                <div className="w-full h-[100dvh] shrink-0 flex flex-col items-center pt-[72px] md:pt-[80px] pb-[72px] md:pb-[24px] relative overflow-y-auto md:overflow-hidden custom-scrollbar">
                     <div className="absolute top-1/4 -left-20 w-[800px] h-[800px] rounded-full pointer-events-none z-0" style={{ background: 'radial-gradient(circle, rgba(224,142,254,0.15) 0%, transparent 60%)' }}></div>
                     <div className="absolute bottom-1/4 -right-20 w-[700px] h-[700px] rounded-full pointer-events-none z-0" style={{ background: 'radial-gradient(circle, rgba(144,148,250,0.15) 0%, transparent 60%)' }}></div>
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vw] h-[100vh] pointer-events-none z-0" style={{ background: 'radial-gradient(ellipse at center, rgba(36,32,74,0.4) 0%, transparent 60%)' }}></div>
-                    
-                    <main className="relative z-10 w-full flex flex-col items-center justify-start md:justify-center flex-1">
-                        <div className="text-center max-w-4xl px-5 mb-10 md:mb-20 leading-relaxed mt-[-20px] md:mt-[-40px]">
-                            <h1 className="font-headline text-4xl md:text-7xl lg:text-8xl font-light tracking-tight text-on-surface mb-6 md:mb-8 leading-tight">
+
+                    <main className="relative z-10 w-full flex-1 flex flex-col items-center justify-center px-4 sm:px-6 md:px-8">
+                        <div className="text-center max-w-4xl w-full mb-8 md:mb-10 lg:mb-12 leading-relaxed">
+                            <h1 className="font-headline text-4xl md:text-6xl lg:text-[5rem] font-light tracking-tight text-on-surface mb-4 md:mb-6 leading-tight">
                                 有些情绪，值得被<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">认真安放</span>
                             </h1>
-                            <p className="font-body text-lg md:text-2xl text-on-surface-variant font-light tracking-wide max-w-2xl mx-auto opacity-90">
+                            <p className="font-body text-base md:text-xl text-on-surface-variant font-light tracking-wide max-w-2xl mx-auto opacity-90">
                                 顺着心的指引，点击最契合你当下的选择
                             </p>
                         </div>
-                        
-                        <div className="w-full max-w-[1600px] px-5 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 md:gap-4 mb-16 leading-relaxed">
+
+                        <div className="w-full max-w-[1100px] flex flex-wrap justify-center content-center gap-3 sm:gap-4 md:gap-5 mx-auto">
                             {Object.entries(INTENT_DATA).map(([key, data]) => (
                                 <button 
                                     key={key} 
                                     onClick={() => handleIntentClick(key)} 
-                                    className="glass-card p-4 md:p-6 rounded-2xl flex flex-col items-center text-center group cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)] hover:border-primary/40 active:scale-95"
+                                    className="glass-card w-[calc(50%-0.375rem)] sm:w-[calc(33.333%-0.666rem)] lg:w-[calc(25%-0.9375rem)] max-w-[260px] p-5 md:p-6 lg:p-7 rounded-[1.5rem] md:rounded-[2rem] flex flex-col items-center justify-center text-center group cursor-pointer transition-transform duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] hover:border-primary/50 hover:bg-surface-container-low/60 active:scale-95 bg-surface-container-low/30 backdrop-blur-xl border border-outline-variant/20 relative overflow-hidden shrink-0"
                                 >
-                                    <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-surface-container flex items-center justify-center mb-3 md:mb-4 group-hover:bg-primary/20 transition-colors">
-                                        <span className="material-symbols-outlined text-xl md:text-2xl text-primary">{data.icon}</span>
+                                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                    <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-[1rem] lg:rounded-[1.25rem] bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 lg:mb-5 group-hover:bg-primary/20 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500 shadow-inner relative z-10">
+                                        <span className="material-symbols-outlined text-xl sm:text-2xl lg:text-3xl text-primary">{data.icon}</span>
                                     </div>
-                                    <h3 className="font-headline text-sm md:text-lg text-on-surface font-light mb-1">{data.categoryLabel}</h3>
-                                    <p className="text-[9px] md:text-xs text-on-surface-variant font-light opacity-80 line-clamp-1">{data.title}</p>
+                                    <h3 className="font-headline text-base sm:text-lg lg:text-xl text-on-surface font-medium mb-1.5 lg:mb-2 tracking-wide group-hover:text-primary-dim transition-colors relative z-10">{data.categoryLabel}</h3>
+                                    <p className="text-[10px] sm:text-xs lg:text-sm text-on-surface-variant font-light opacity-60 group-hover:opacity-100 transition-opacity leading-relaxed relative z-10">{data.title}</p>
                                 </button>
                             ))}
                         </div>

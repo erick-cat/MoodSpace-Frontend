@@ -106,24 +106,27 @@ export default function Upgrade() {
         }
     };
 
-    if (loading) return <div className="page-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><div className="spinner"></div></div>;
+    if (loading) return (
+        <div className="w-full min-h-screen pt-[100px] flex justify-center items-center bg-surface cosmic-gradient">
+            <div className="spinner w-10 h-10 border-4 border-outline-variant/30 border-t-primary rounded-full animate-spin"></div>
+        </div>
+    );
 
     // Render Polling View
     if (orderNoParam) {
         return (
-            <div className="page-container" style={{ textAlign: 'center', padding: '100px 20px', maxWidth: '600px', margin: '0 auto' }}>
-                <div style={{ background: '#fff', padding: '40px', borderRadius: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.05)' }}>
-                    <div style={{ fontSize: '4rem', marginBottom: '20px' }}>{isSuccess ? '✅' : '⏳'}</div>
-                    <h2 style={{ marginBottom: '20px', fontSize: '1.8rem' }}>订单状态追踪</h2>
-                    <div style={{ margin: '20px 0', fontSize: '1.1rem', color: '#64748b', lineHeight: 1.6 }}>
+            <div className="w-full min-h-screen pt-[120px] pb-20 bg-surface cosmic-gradient text-on-surface font-body px-5">
+                <div className="max-w-xl mx-auto glass-card bg-surface-container-low/30 backdrop-blur-xl border border-outline-variant/20 p-10 rounded-[2rem] text-center shadow-2xl">
+                    <div className="text-6xl mb-6">{isSuccess ? '✅' : '⏳'}</div>
+                    <h2 className="font-headline text-2xl font-medium mb-4">订单状态追踪</h2>
+                    <div className="text-on-surface-variant text-lg mb-8 leading-relaxed">
                         {pollStatus}
                     </div>
-                    {!isSuccess && <div className="spinner" style={{ margin: '30px auto' }}></div>}
+                    {!isSuccess && <div className="spinner w-8 h-8 border-4 border-outline-variant/30 border-t-primary rounded-full animate-spin mx-auto mb-6"></div>}
                     {isSuccess && (
                         <button 
                             onClick={() => navigate('/myspace')} 
-                            className="btn btn--primary" 
-                            style={{ marginTop: '20px', padding: '12px 30px' }}
+                            className="bg-primary text-on-primary px-8 py-3 rounded-xl font-medium transition-transform hover:-translate-y-1 shadow-[0_10px_20px_rgba(224,142,254,0.2)] mt-4"
                         >
                             返回个人中心
                         </button>
@@ -135,295 +138,217 @@ export default function Upgrade() {
 
     // Render Pricing View
     return (
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }} className="page-container px-5 py-12 lg:py-16">
-            {/* --- Hero Section --- */}
-            <div className="text-center mb-12 lg:mb-20">
-                <div style={{ 
-                    display: 'inline-block', padding: '10px 24px', borderRadius: '100px', 
-                    background: 'var(--pink-light)', color: 'var(--pink)', 
-                    fontSize: '0.9rem', fontWeight: 800, marginBottom: '20px',
-                    boxShadow: '0 4px 15px rgba(214, 51, 108, 0.1)'
-                }}>
-                    ✨ 开启您的专属浪漫空间
-                </div>
-                <h1 style={{ fontSize: 'clamp(1.8rem, 8vw, 3.2rem)', fontWeight: 900, color: '#1e293b', marginBottom: '20px', letterSpacing: '-1px', lineHeight: 1.2 }}>
-                    选择最适合您的 <span style={{ color: 'var(--pink)', background: 'linear-gradient(120deg, #fce7f3 0%, #fce7f3 100%)', backgroundRepeat: 'no-repeat', backgroundSize: '100% 0.3em', backgroundPosition: '0 0.8em' }}>特权等级</span>
-                </h1>
-                <p style={{ fontSize: '1.1rem', color: '#64748b', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6, opacity: 0.9 }}>
-                    加入 Pro 会员或合伙人计划，解锁无限创意模板与专属自定义功能，让每一个浪漫时刻都值得被永久铭记。
-                </p>
-            </div>
+        <div className="w-full min-h-[100dvh] pt-[100px] md:pt-[120px] pb-10 bg-surface cosmic-gradient text-on-surface font-body relative overflow-hidden">
+            {/* Immersive Background Glow */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[100px] bg-primary/10 pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] rounded-full blur-[120px] bg-secondary/10 pointer-events-none"></div>
 
-            {/* --- Benefit Highlights --- */}
-            <div style={{ 
-                display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
-                gap: '24px', marginBottom: '80px' 
-            }}>
-                {[
-                    { icon: '🎨', title: '无限模板', desc: '解锁全场 100+ 精致浪漫模板，支持一键无感切换。' },
-                    { icon: '⚡', title: '极速加载', desc: '独家 CDN 加速，无论是图片还是 4K 视频均可秒开。' },
-                    { icon: '🔗', title: '专属域名', desc: '拥有自定义二级域名，甚至可以绑定您的独立域名。' },
-                    { icon: '💎', title: '尊贵标识', desc: '全平台尊贵会员标识，头像框及个人主页深度定制。' },
-                ].map((b, idx) => (
-                    <div key={idx} style={{ 
-                        background: '#fff', padding: '24px', borderRadius: '24px', 
-                        border: '1px solid #f1f5f9', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' 
-                    }}>
-                        <div style={{ fontSize: '2.5rem', marginBottom: '15px' }}>{b.icon}</div>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '10px', color: '#1e293b' }}>{b.title}</h3>
-                        <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.6 }}>{b.desc}</p>
+            <div className="max-w-[1100px] mx-auto px-5 relative z-10">
+                {/* --- Hero Section --- */}
+                <div className="text-center mb-12 lg:mb-20">
+                    <div className="inline-block px-6 py-2 rounded-full bg-primary/10 text-primary border border-primary/20 text-sm font-medium mb-6 backdrop-blur-md shadow-[0_4px_15px_rgba(224,142,254,0.1)]">
+                        ✨ 开启您的专属浪漫空间
                     </div>
-                ))}
-            </div>
-            
-            {/* --- Pricing Grid --- */}
-            <div style={{ 
-                display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-                gap: '30px', alignItems: 'stretch'
-            }}>
-                {/* Free Tier (Static Comparison) */}
-                <div style={{
-                    border: '2px solid #e2e8f0', 
-                    borderRadius: '32px', 
-                    padding: '40px 24px lg:50px 40px',
-                    background: '#fff', 
-                    textAlign: 'center', 
-                    boxShadow: '0 10px 20px rgba(0,0,0,0.02)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    transition: 'all 0.4s ease'
-                }}>
-                    <div style={{ marginBottom: '20px' }}>
-                        <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#1e293b', marginBottom: '8px' }}>
-                            体验用户
-                        </h2>
-                        <p style={{ color: '#64748b', fontSize: '0.95rem', fontWeight: 500 }}>
-                            基础功能 · 永久免费
-                        </p>
-                    </div>
-                    
-                    <div style={{ margin: '40px 0', borderTop: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', padding: '30px 0' }}>
-                        <div style={{ fontSize: 'clamp(3.2rem, 10vw, 4.2rem)', fontWeight: 900, color: '#0f172a', letterSpacing: '-2px' }}>
-                            <span style={{ fontSize: 'clamp(1.4rem, 4vw, 1.8rem)', verticalAlign: 'top', marginTop: '10px', display: 'inline-block' }}>¥</span>
-                            0
-                        </div>
-                        <div style={{ 
-                            display: 'inline-block', padding: '4px 12px', borderRadius: '8px',
-                            background: '#f1f5f9', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, marginTop: '10px'
-                        }}>
-                            无需支付，立即开始
-                        </div>
-                    </div>
-                    
-                    <div style={{ textAlign: 'left', marginBottom: '40px', flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e293b', marginBottom: '20px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                            基础权限:
-                        </div>
-                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '1rem', color: '#475569' }}>
-                            {[
-                                { l: '精选免费模板库', p: true },
-                                { l: '1 个专属域名配额', p: true },
-                                { l: '每日 5 次修改限制', p: true },
-                                { l: '标准 CDN 加载速度', p: true },
-                                { l: '支持 480+ BGM 库', p: true },
-                                { l: '移除底部版权标识', p: false },
-                                { l: '高级粒子特效定制', p: false },
-                            ].map((item, i) => (
-                                <li key={i} style={{ 
-                                    marginBottom: '14px', display: 'flex', alignItems: 'flex-start', gap: '12px',
-                                    opacity: item.p ? 1 : 0.35
-                                }}>
-                                    <span style={{ 
-                                        width: '20px', height: '20px', borderRadius: '50%',
-                                        background: item.p ? '#94a3b8' : '#cbd5e1',
-                                        color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: '10px', marginTop: '4px', flexShrink: 0
-                                    }}>{item.p ? '✓' : '✕'}</span>
-                                    <span style={{ textDecoration: item.p ? 'none' : 'line-through' }}>{item.l}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    <button 
-                        onClick={() => navigate('/builder')}
-                        style={{ 
-                            width: '100%', padding: '20px', borderRadius: '20px', 
-                            fontSize: '1.2rem', fontWeight: 800, transition: 'all 0.3s ease',
-                            background: '#f1f5f9', color: '#64748b', border: 'none',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        免费开始制作
-                    </button>
+                    <h1 className="font-headline text-4xl md:text-5xl lg:text-6xl font-light tracking-tight mb-6 leading-tight">
+                        选择最适合您的 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-medium">特权等级</span>
+                    </h1>
+                    <p className="text-on-surface-variant text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+                        加入 Pro 会员或合伙人计划，解锁无限创意模板与专属自定义功能，让每一个浪漫时刻都值得被永久铭记。
+                    </p>
                 </div>
 
-                {[...configs]
-                    .sort((a, b) => (a.limit || 0) - (b.limit || 0))
-                    .map(c => {
-                    const isPro = c.tier === 'pro';
-                    const isPartner = c.tier === 'partner';
-                    const isLifetime = c.tier === 'lifetime';
+                {/* --- Benefit Highlights --- */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16 md:mb-24">
+                    {[
+                        { icon: '🎨', title: '无限模板', desc: '解锁全场 100+ 精致浪漫模板，支持一键无感切换。' },
+                        { icon: '⚡', title: '极速加载', desc: '独家 CDN 加速，无论是图片还是 4K 视频均可秒开。' },
+                        { icon: '🔗', title: '专属域名', desc: '拥有自定义二级域名，甚至可以绑定您的独立域名。' },
+                        { icon: '💎', title: '尊贵标识', desc: '全平台尊贵会员标识，头像框及个人主页深度定制。' },
+                    ].map((b, idx) => (
+                        <div key={idx} className="glass-card bg-surface-container-low/30 backdrop-blur-md border border-outline-variant/10 p-6 rounded-3xl hover:bg-surface-container-low/50 hover:-translate-y-1 transition-all duration-300">
+                            <div className="text-3xl md:text-4xl mb-4">{b.icon}</div>
+                            <h3 className="font-headline text-lg font-medium mb-2">{b.title}</h3>
+                            <p className="text-sm text-on-surface-variant leading-relaxed">{b.desc}</p>
+                        </div>
+                    ))}
+                </div>
+                
+                {/* --- Pricing Grid --- */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch mb-20">
+                    {/* Free Tier (Static Comparison) */}
+                    <div className="glass-card flex flex-col bg-surface-container-low/20 backdrop-blur-xl border border-outline-variant/20 rounded-[2rem] p-8 lg:p-10 transition-all duration-500 hover:-translate-y-2 hover:border-outline-variant/40 hover:shadow-[0_20px_40px_rgba(0,0,0,0.2)]">
+                        <div className="text-center mb-8">
+                            <h2 className="font-headline text-2xl font-medium mb-2">体验用户</h2>
+                            <p className="text-on-surface-variant text-sm font-light">基础功能 · 永久免费</p>
+                        </div>
+                        
+                        <div className="text-center py-8 border-y border-outline-variant/10 mb-8">
+                            <div className="text-5xl lg:text-6xl font-headline font-light tracking-tight mb-4 flex justify-center items-start">
+                                <span className="text-xl lg:text-2xl mt-2 mr-1">¥</span>0
+                            </div>
+                            <div className="inline-block px-4 py-1.5 rounded-lg bg-surface-container border border-outline-variant/10 text-on-surface-variant text-xs font-medium">
+                                无需支付，立即开始
+                            </div>
+                        </div>
+                        
+                        <div className="flex-1 mb-10">
+                            <div className="text-xs font-medium text-on-surface-variant uppercase tracking-widest mb-6">基础权限：</div>
+                            <ul className="space-y-4">
+                                {[
+                                    { l: '精选免费模板库', p: true },
+                                    { l: '1 个专属域名配额', p: true },
+                                    { l: '每日 5 次修改限制', p: true },
+                                    { l: '标准 CDN 加载速度', p: true },
+                                    { l: '支持 480+ BGM 库', p: true },
+                                    { l: '移除底部版权标识', p: false },
+                                    { l: '高级粒子特效定制', p: false },
+                                ].map((item, i) => (
+                                    <li key={i} className={`flex items-start gap-3 ${item.p ? '' : 'opacity-30'}`}>
+                                        <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] mt-0.5 ${item.p ? 'bg-surface-variant text-on-surface' : 'bg-surface-container-highest/50 text-outline'}`}>
+                                            {item.p ? '✓' : '✕'}
+                                        </span>
+                                        <span className={`text-sm font-light ${!item.p && 'line-through'}`}>{item.l}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
 
-                    // Color Schemes
-                    const themeColor = c.accentColor || (isPro ? '#f43f5e' : isPartner ? '#7c3aed' : '#1e293b');
-                    const themeBg = isPro ? '#fff1f2' : isPartner ? '#f5f3ff' : '#f8fafc'; // Keep light background the same structure
-
-                    return (
-                        <div key={c.id} style={{
-                            border: `2px solid ${isPro ? themeColor : '#e2e8f0'}`, 
-                            borderRadius: '32px', 
-                            padding: '40px 24px lg:50px 40px',
-                            background: '#fff', 
-                            textAlign: 'center', 
-                            boxShadow: isPro ? '0 25px 50px -12px rgba(214, 51, 108, 0.15)' : '0 10px 20px rgba(0,0,0,0.02)',
-                            position: 'relative',
-                            transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                            display: 'flex',
-                            flexDirection: 'column'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-10px) scale(1.02)';
-                            if (isPro) e.currentTarget.style.boxShadow = '0 30px 60px -12px rgba(214, 51, 108, 0.25)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                            if (isPro) e.currentTarget.style.boxShadow = '0 25px 50px -12px rgba(214, 51, 108, 0.15)';
-                        }}
+                        <button 
+                            onClick={() => navigate('/builder')}
+                            className="w-full py-4 rounded-xl font-medium bg-surface-variant text-on-surface border border-outline-variant/20 hover:bg-surface-container-high transition-colors"
                         >
-                            {c.discount_label && (
-                                <div style={{
-                                    position: 'absolute', top: '-15px', left: '50%', transform: 'translateX(-50%)',
-                                    background: c.bg || (isPro ? 'linear-gradient(135deg, #f43f5e, #e11d48)' : 'linear-gradient(135deg, #7c3aed, #6d28d9)'),
-                                    color: '#fff', padding: '6px 20px', borderRadius: '30px',
-                                    fontSize: '0.8rem', fontWeight: 900, boxShadow: '0 10px 20px rgba(0,0,0,0.1)',
-                                    whiteSpace: 'nowrap'
-                                }}>
-                                    🔥 {c.discount_label}
+                            免费开始制作
+                        </button>
+                    </div>
+
+                    {[...configs]
+                        .sort((a, b) => (a.limit || 0) - (b.limit || 0))
+                        .map(c => {
+                        const isPro = c.tier === 'pro';
+                        const isPartner = c.tier === 'partner';
+                        const isLifetime = c.tier === 'lifetime';
+
+                        const accentColorHex = c.accentColor || (isPro ? '#e879f9' : '#818cf8'); // primary vs secondary
+                        const gradientFrom = isPro ? 'from-primary' : 'from-secondary';
+                        const gradientTo = isPro ? 'to-primary-container' : 'to-secondary-container';
+                        
+                        return (
+                            <div key={c.id} className={`glass-card flex flex-col relative bg-surface-container-low/30 backdrop-blur-xl rounded-[2rem] p-8 lg:p-10 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${
+                                isPro ? 'border border-primary/40 shadow-[0_0_30px_rgba(224,142,254,0.15)] ring-1 ring-primary/20' : 
+                                isPartner || isLifetime ? 'border border-secondary/40 shadow-[0_0_30px_rgba(129,140,248,0.15)] ring-1 ring-secondary/20' : 
+                                'border border-outline-variant/20'
+                            }`}>
+                                {c.discount_label && (
+                                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                                        <div className={`text-white px-5 py-1.5 rounded-full text-xs font-bold shadow-[0_10px_20px_rgba(0,0,0,0.2)] whitespace-nowrap bg-gradient-to-r ${gradientFrom} ${gradientTo}`}>
+                                            🔥 {c.discount_label}
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                <div className="text-center mb-8">
+                                    <h2 className="font-headline text-2xl font-medium mb-2">{c.display_name || c.tier.toUpperCase()}</h2>
+                                    <p className="text-on-surface-variant text-sm font-light">全项权益 · {c.duration_months} 个月有效期</p>
                                 </div>
-                            )}
-                            
-                            <div style={{ marginBottom: '20px' }}>
-                                <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#1e293b', marginBottom: '8px' }}>
-                                    {c.display_name || c.tier.toUpperCase()}
-                                </h2>
-                                <p style={{ color: '#64748b', fontSize: '0.95rem', fontWeight: 500 }}>
-                                    全项权益 · {c.duration_months} 个月有效期
+                                
+                                <div className="text-center py-8 border-y border-outline-variant/10 mb-8">
+                                    <div className="line-through text-outline text-lg mb-1">
+                                        ¥ {(c.base_price / 100).toFixed(2)}
+                                    </div>
+                                    <div className="text-5xl lg:text-6xl font-headline font-light tracking-tight mb-4 flex justify-center items-start text-on-surface">
+                                        <span className="text-xl lg:text-2xl mt-2 mr-1">¥</span>
+                                        {c.is_renewal 
+                                            ? (c.renewal_price / 100).toFixed(2) 
+                                            : (c.is_returning 
+                                                ? (c.base_price / 100).toFixed(2) 
+                                                : (c.first_month_price / 100).toFixed(2))
+                                        }
+                                    </div>
+                                    <div className={`inline-block px-4 py-1.5 rounded-lg text-xs font-medium text-white shadow-sm`}
+                                         style={{ backgroundColor: accentColorHex }}>
+                                        {c.is_renewal 
+                                            ? '您当前的续费特惠价' 
+                                            : (c.is_returning 
+                                                ? '当前等级标准价格' 
+                                                : `首月入坑价 (次月 ¥${(c.renewal_price / 100).toFixed(2)} 续费)`)
+                                        }
+                                    </div>
+                                </div>
+                                
+                                <div className="flex-1 mb-10">
+                                    <div className="text-xs font-medium text-on-surface-variant uppercase tracking-widest mb-6">等级核心权益：</div>
+                                    <ul className="space-y-4">
+                                        {((Array.isArray(c.features) && c.features.length > 0) ? c.features : [
+                                            { text: '100% 模板库自由切换', active: true },
+                                            { text: `${isPro ? '3' : isPartner ? '10' : '99'} 个域名配额`, active: true },
+                                            { text: '专属 7x24h 技术支持', active: isPartner || isLifetime },
+                                            { text: '全库 480+ 款无损 BGM 库', active: true },
+                                            { text: '动态粒子特效背景自由定制', active: true },
+                                            { text: '支持绑定个人顶级域名', active: isPartner || isLifetime },
+                                        ]).map((item, i) => (
+                                            <li key={i} className={`flex items-start gap-3 ${item.active !== false ? '' : 'opacity-30'}`}>
+                                                <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] mt-0.5 text-white ${!item.active ? 'bg-surface-container-highest/50 !text-outline' : ''}`}
+                                                      style={{ backgroundColor: item.active !== false ? accentColorHex : undefined }}>
+                                                    {item.active !== false ? '✓' : '✕'}
+                                                </span>
+                                                <span className={`text-sm font-light ${item.active === false && 'line-through'}`}>{item.text}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <button 
+                                    disabled={!!payingId}
+                                    onClick={() => handleCheckout(c, 'wechat')}
+                                    className={`w-full py-4 rounded-xl font-medium text-white transition-all duration-300 shadow-[0_10px_20px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_25px_rgba(0,0,0,0.3)] hover:-translate-y-1 bg-gradient-to-br ${gradientFrom} ${gradientTo} disabled:opacity-70 disabled:cursor-not-allowed`}
+                                >
+                                    {payingId === c.id ? '正在唤起支付...' : (c.is_renewal ? '立即续费特权' : '立即开启特权')}
+                                </button>
+                                <p className="text-center text-[10px] text-on-surface-variant mt-3 opacity-80">
+                                    安全加密支付 · 权益秒到账
                                 </p>
                             </div>
-                            
-                            <div style={{ margin: '40px 0', borderTop: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', padding: '30px 0' }}>
-                                <div style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '1.1rem', marginBottom: '5px' }}>
-                                    ¥ {(c.base_price / 100).toFixed(2)}
+                        );
+                    })}
+                </div>
+                
+                {/* --- FAQ / Footer --- */}
+                <div className="mt-16 pt-12 border-t border-outline-variant/10 pb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div>
+                            <h4 className="font-headline text-xl font-medium mb-6">常见问题解答</h4>
+                            <div className="space-y-6">
+                                <div>
+                                    <div className="font-medium text-on-surface mb-2">Q: 升级后原来的项目会丢失吗？</div>
+                                    <div className="text-sm text-on-surface-variant font-light leading-relaxed">绝对不会。升级只会增加您的创作上限并解锁新功能，原有内容将完美保留并支持直接升级至高级模板。</div>
                                 </div>
-                                <div style={{ fontSize: 'clamp(3.2rem, 10vw, 4.2rem)', fontWeight: 900, color: '#0f172a', letterSpacing: '-2px' }}>
-                                    <span style={{ fontSize: 'clamp(1.4rem, 4vw, 1.8rem)', verticalAlign: 'top', marginTop: '10px', display: 'inline-block' }}>¥</span>
-                                    {c.is_renewal 
-                                        ? (c.renewal_price / 100).toFixed(2) 
-                                        : (c.is_returning 
-                                            ? (c.base_price / 100).toFixed(2) 
-                                            : (c.first_month_price / 100).toFixed(2))
-                                    }
+                                <div>
+                                    <div className="font-medium text-on-surface mb-2">Q: 支持哪些支付方式？</div>
+                                    <div className="text-sm text-on-surface-variant font-light leading-relaxed">目前全面支持微信支付。支付过程受商户网关加密保护，确保您的资金安全。</div>
                                 </div>
-                                <div style={{ 
-                                    display: 'inline-block', padding: '6px 14px', borderRadius: '8px',
-                                    background: themeColor, color: '#fff', fontSize: '0.85rem', fontWeight: 700, marginTop: '10px',
-                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                                }}>
-                                    {c.is_renewal 
-                                        ? '您当前的续费特惠价' 
-                                        : (c.is_returning 
-                                            ? '当前等级标准价格' 
-                                            : `首月入坑价 (次月 ¥${(c.renewal_price / 100).toFixed(2)} 续费)`)
-                                    }
-                                </div>
-                            </div>
-                            
-                            <div style={{ textAlign: 'left', marginBottom: '40px', flex: 1 }}>
-                                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e293b', marginBottom: '20px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                    等级核心权益:
-                                </div>
-                                <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '1rem', color: '#475569' }}>
-                                    {((Array.isArray(c.features) && c.features.length > 0) ? c.features : [
-                                        { text: '100% 模板库自由切换', active: true },
-                                        { text: `${isPro ? '3' : isPartner ? '10' : '99'} 个域名配额`, active: true },
-                                        { text: '专属 7x24h 情感导师技术支持', active: isPartner || isLifetime },
-                                        { text: '全库 480+ 款无损 BGM 库', active: true },
-                                        { text: '动态粒子特效背景自由定制', active: true },
-                                        { text: '支持绑定个人顶级域名', active: isPartner || isLifetime },
-                                    ]).map((item, i) => (
-                                        <li key={i} style={{ 
-                                            marginBottom: '14px', display: 'flex', alignItems: 'flex-start', gap: '12px',
-                                            opacity: item.active ? 1 : 0.35
-                                        }}>
-                                            <span style={{ 
-                                                width: '20px', height: '20px', borderRadius: '50%',
-                                                background: item.active !== false ? themeColor : '#cbd5e1',
-                                                color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontSize: '10px', marginTop: '4px', flexShrink: 0
-                                            }}>{item.active !== false ? '✓' : '✕'}</span>
-                                            <span style={{ textDecoration: item.active !== false ? 'none' : 'line-through' }}>{item.text}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-
-                            <button 
-                                disabled={!!payingId}
-                                onClick={() => handleCheckout(c, 'wechat')}
-                                style={{ 
-                                    width: '100%', padding: '20px', borderRadius: '20px', 
-                                    fontSize: '1.2rem', fontWeight: 800, transition: 'all 0.3s ease',
-                                    background: themeColor, color: '#fff', border: 'none',
-                                    cursor: 'pointer', boxShadow: `0 10px 25px -5px ${themeColor}66`,
-                                    opacity: (payingId && payingId !== c.id) ? 0.7 : 1
-                                }}
-                            >
-                                {payingId === c.id ? '正在唤起支付...' : (c.is_renewal ? '立即续费特权' : '立即开启特权')}
-                            </button>
-                            <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '15px' }}>
-                                安全加密支付 · 权益秒到账
-                            </p>
-                        </div>
-                    );
-                })}
-            </div>
-            
-            {/* --- FAQ / Footer --- */}
-            <div style={{ marginTop: '60px', borderTop: '1px solid #e2e8f0', paddingTop: '40px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '40px', textAlign: 'left' }}>
-                    <div>
-                        <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1e293b', marginBottom: '25px' }}>常见问题解答</h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-                            <div>
-                                <div style={{ fontWeight: 700, color: '#1e293b', marginBottom: '8px' }}>Q: 升级后原来的项目会丢失吗？</div>
-                                <div style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.6 }}>绝对不会。升级只会增加您的创作上限并解锁新功能，原有内容将完美保留并支持直接升级至高级模板。</div>
-                            </div>
-                            <div>
-                                <div style={{ fontWeight: 700, color: '#1e293b', marginBottom: '8px' }}>Q: 支持哪些支付方式？</div>
-                                <div style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.6 }}>目前全面支持微信支付。支付过程受商户网关加密保护，确保您的资金安全。</div>
                             </div>
                         </div>
-                    </div>
-                    <div>
-                        <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1e293b', marginBottom: '25px' }}>VIP 专属服务</h4>
-                        <div style={{ background: '#f8fafc', padding: '30px', borderRadius: '24px', border: '1px dashed #cbd5e1' }}>
-                            <p style={{ fontSize: '0.95rem', color: '#475569', marginBottom: '15px', lineHeight: 1.6 }}>
-                                遇到支付问题、权益未即时到账或有定制化需求？请随时联系我们的 12h 快速响应客服：
-                            </p>
-                            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--pink)' }}>
-                                微信号: <span style={{ textDecoration: 'underline' }}>MoodSpaceSupport</span>
-                            </div>
-                            <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '10px' }}>
-                                (服务时间: 10:00 - 22:00)
+                        <div>
+                            <h4 className="font-headline text-xl font-medium mb-6">VIP 专属服务</h4>
+                            <div className="glass-card bg-surface-container-low/20 backdrop-blur-md border border-outline-variant/10 p-6 rounded-2xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none group-hover:bg-primary/10 transition-colors"></div>
+                                <p className="text-sm text-on-surface-variant font-light mb-4 leading-relaxed relative z-10">
+                                    遇到支付问题、权益未即时到账或有定制化需求？请随时联系我们的快速响应客服：
+                                </p>
+                                <div className="text-base font-medium text-primary mb-1 relative z-10">
+                                    微信号: <span className="underline decoration-primary/30 underline-offset-4">MoodSpaceSupport</span>
+                                </div>
+                                <div className="text-xs text-outline relative z-10">
+                                    (服务时间: 10:00 - 22:00)
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div style={{ marginTop: '60px', textAlign: 'center', color: '#94a3b8', fontSize: '0.8rem' }}>
-                © 2026 RomanceSpace · 让浪漫不再有边界
+                <div className="text-center text-outline text-xs mt-8 opacity-60">
+                    © 2026 RomanceSpace · 让浪漫不再有边界
+                </div>
             </div>
         </div>
     );

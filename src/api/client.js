@@ -260,3 +260,36 @@ export async function deletePricingConfig(id, adminKey) {
         headers: { 'X-Admin-Key': adminKey },
     });
 }
+
+// ── NEW TROUBLESHOOTING API ───────────────────────────────────────────────
+
+export async function deepSweepR2(adminKey) {
+    return apiFetch('/api/template/deep-sweep', {
+        method: 'POST',
+        headers: { 'X-Admin-Key': adminKey }
+    });
+}
+
+export async function purgeAllCDN(adminKey) {
+    return apiFetch('/api/template/purge-all', {
+        method: 'POST',
+        headers: { 'X-Admin-Key': adminKey }
+    });
+}
+
+export async function massRenderTemplate(templateName, adminKey) {
+    return apiFetch('/api/project/mass-render', {
+        method: 'POST',
+        headers: { 
+            'X-Admin-Key': adminKey,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ templateName })
+    });
+}
+
+export async function checkSystemHealth(adminKey) {
+    return apiFetch('/api/template/health', {
+        headers: { 'X-Admin-Key': adminKey }
+    });
+}

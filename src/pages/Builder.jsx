@@ -102,6 +102,7 @@ export default function Builder() {
     const [fieldValues, setFieldValues] = useState({});
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
+    const [isTemplateFetching, setIsTemplateFetching] = useState(false);
     const [result, setResult] = useState(null); // { url }
     const [showPoster, setShowPoster] = useState(false);
     const [status, setStatus] = useState(null); // { dailyUsedEdits, maxDailyEdits }
@@ -214,11 +215,16 @@ export default function Builder() {
 
     // 4. Handle initial template choice from URL (New Page Flow)
     useEffect(() => {
-        if (!editSubdomain && templateName && templates.length > 0 && !selectedTemplate) {
-            const found = templates.find(t => t.name === templateName);
-            if (found) setSelected(found);
+        if (!editSubdomain && templates.length > 0 && !selectedTemplate) {
+            const qTemplateId = searchParams.get('templateId');
+            const targetName = templateName || qTemplateId;
+            
+            if (targetName) {
+                const found = templates.find(t => t.name === targetName);
+                if (found) setSelected(found);
+            }
         }
-    }, [templateName, templates, editSubdomain, selectedTemplate]);
+    }, [templateName, searchParams, templates, editSubdomain, selectedTemplate]);
 
     // Fetch user quota for status display
     useEffect(() => {
@@ -237,9 +243,10 @@ export default function Builder() {
             return;
         }
 
-        // Pre-fill default values for the selected template
-        // Guard: If we are in edit mode and fieldValues already has entries, 
-        // it means we just loaded the project data. DON'T overwrite with defaults.
+        const controller = new AbortController();
+        setIsTemplateFetching(true);
+
+        // Pre-fill fields logic
         const isEditModeJustLoaded = editSubdomain && Object.keys(fieldValues).length > 0;
 
         if (!selectedTemplate.static && selectedTemplate.fields) {
@@ -252,6 +259,7 @@ export default function Builder() {
                         : (f.default !== undefined ? f.default : (DEFAULT_VALUES[key] || ''));
                     initialVals[key] = defaultValue;
                 });
+                
                 setFieldValues(initialVals);
             }
         } else {
@@ -260,14 +268,24 @@ export default function Builder() {
 
         const apiBase = import.meta.env.VITE_API_BASE_URL ?? '';
         const versionParam = selectedTemplate.version ? `?v=${selectedTemplate.version}` : '';
-        fetch(`${apiBase}/api/template/raw/${selectedTemplate.name}${versionParam}`)
+        
+        fetch(`${apiBase}/api/template/raw/${selectedTemplate.name}${versionParam}`, { signal: controller.signal })
             .then(res => {
                 if (!res.ok) throw new Error('Failed to fetch raw template');
                 return res.text();
             })
-            .then(html => setRawHtml(html))
-            .catch(err => console.error('[BSR Error]', err));
-    }, [selectedTemplate]);
+            .then(html => {
+                setRawHtml(html);
+                setIsTemplateFetching(false);
+            })
+            .catch(err => {
+                if (err.name === 'AbortError') return; // Ignore intentionally aborted requests
+                console.error('[BSR Error]', err);
+                setIsTemplateFetching(false);
+            });
+
+        return () => controller.abort();
+    }, [selectedTemplate, editSubdomain]); // Added editSubdomain for stability, but kept dependencies lean
 
     function handleTemplateChange(e) {
         const found = templates.find((t) => t.name === e.target.value) ?? null;
@@ -711,10 +729,21 @@ export default function Builder() {
 
                             {/* Iframe injection */}
                             <div className="flex-1 relative bg-black">
-                                {(!selectedTemplate || !rawHtml) ? (
-                                    <div className="absolute inset-0 bg-surface/5 flex flex-col items-center justify-center pointer-events-none group-hover:bg-transparent transition-colors duration-500">
-                                        <span className="material-symbols-outlined text-3xl md:text-5xl text-primary/30 mb-2 md:mb-4 group-hover:scale-110 transition-transform">visibility</span>
-                                        <span className="text-on-surface-variant font-light text-sm tracking-widest opacity-80 group-hover:opacity-0 transition-opacity">填写左侧信息实时预览</span>
+                                {(!selectedTemplate || !rawHtml || isTemplateFetching) ? (
+                                    <div className="absolute inset-0 bg-surface/5 flex flex-col items-center justify-center pointer-events-none transition-colors duration-500">
+                                        {isTemplateFetching ? (
+                                            <div className="flex flex-col items-center gap-4">
+                                                <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                                                <span className="text-on-surface-variant font-headline font-light tracking-widest text-xs opacity-60">
+                                                    正在开启新的时空...
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <span className="material-symbols-outlined text-3xl md:text-5xl text-primary/30 mb-2 md:mb-4 group-hover:scale-110 transition-transform">visibility</span>
+                                                <span className="text-on-surface-variant font-light text-sm tracking-widest opacity-80 group-hover:opacity-0 transition-opacity">填写左侧信息实时预览</span>
+                                            </>
+                                        )}
                                     </div>
                                 ) : (
                                     <iframe
@@ -814,12 +843,23 @@ export default function Builder() {
                         className={`relative z-10 flex items-center justify-center w-full h-full px-4 pb-12 transition-transform duration-500 ${(isKeyboardVisible || (isSheetOpen && activeTab === 'content')) ? '-translate-y-48' : 'translate-y-0'}`}
                     >
                         <div className="w-full max-w-[360px] aspect-[9/19.5] max-h-[82vh] rounded-[3rem] overflow-hidden border-4 border-white/20 shadow-[0_40px_80px_rgba(0,0,0,0.8)] relative bg-black">
-                            {(!selectedTemplate || !rawHtml) ? (
+                            {(!selectedTemplate || !rawHtml || isTemplateFetching) ? (
                                 <div className="absolute inset-0 bg-surface/90 flex flex-col items-center justify-center p-8 text-center backdrop-blur-sm">
-                                    <span className="material-symbols-outlined text-5xl text-primary/40 mb-6 animate-pulse">edit_document</span>
-                                    <span className="text-on-surface-variant font-light text-base tracking-widest leading-relaxed opacity-80">
-                                        选择模板并输入文字<br />实时见证星空绽放
-                                    </span>
+                                    {isTemplateFetching ? (
+                                        <div className="flex flex-col items-center gap-4 animate-in fade-in duration-500">
+                                            <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                                            <span className="text-primary font-headline font-light tracking-widest text-sm">
+                                                正在为您点亮星空...
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <span className="material-symbols-outlined text-5xl text-primary/40 mb-6 animate-pulse">edit_document</span>
+                                            <span className="text-on-surface-variant font-light text-base tracking-widest leading-relaxed opacity-80">
+                                                选择模板并输入文字<br />实时见证星空绽放
+                                            </span>
+                                        </>
+                                    )}
                                 </div>
                             ) : (
                                 <iframe

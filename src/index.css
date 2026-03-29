@@ -27,7 +27,7 @@
 
 body {
     font-family: var(--font);
-    background: var(--bg);
+    background-color: #0d0a27; /* Global dark base to prevent white gaps on pull-down */
     color: var(--mid);
     min-height: 100vh;
     min-height: -webkit-fill-available;
@@ -43,6 +43,7 @@ body {
 
 html {
     height: -webkit-fill-available;
+    background-color: #0d0a27;
 }
 
 /* ── Layout ──────────────────────────────────────────────────────────────── */
@@ -1004,6 +1005,8 @@ html.slide-up-nav::view-transition-new(root) {
         0 8px 32px 0 rgba(0, 0, 0, 0.3),
         inset 0 0 0 0.5px rgba(255, 255, 255, 0.1);
     transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    border-radius: 12px;
+    overflow: hidden; /* Strict overflow control */
 }
 
 .ambient-header {
@@ -1011,6 +1014,8 @@ html.slide-up-nav::view-transition-new(root) {
     position: relative;
     overflow: hidden;
     height: 60px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
 }
 
 .ambient-header::before {
@@ -1120,7 +1125,13 @@ html.slide-up-nav::view-transition-new(root) {
     z-index: 10;
 }
 
-@media (hover: hover) {
+/* Show preview button by default on mobile/touch, hide on desktop until hover */
+.preview-overlay-btn {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+@media (hover: hover) and (pointer: fine) {
     .preview-overlay-btn {
         opacity: 0;
         transform: translate(-50%, -50%) scale(0.9);
@@ -1131,11 +1142,13 @@ html.slide-up-nav::view-transition-new(root) {
     }
 }
 
-/* For touch devices or mobile browsers that don't support hover */
-@media (hover: none) {
-    .preview-overlay-btn {
-        opacity: 0.9;
-        transform: translate(-50%, -50%) scale(1);
+/* Fix mobile card clipping/spacing on very narrow screens */
+@media (max-width: 380px) {
+    .glass-card--premium {
+        padding: 0.75rem !important;
+    }
+    .glass-card--premium h4 {
+        font-size: 0.85rem !important;
     }
 }
 

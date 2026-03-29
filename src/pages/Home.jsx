@@ -67,6 +67,10 @@ export default function Home() {
     }, []);
 
     const handleIntentClick = (type) => {
+        if (type === 'neutral') {
+            navigate('/gallery', { state: { intent: 'all', scene: 'all' } });
+            return;
+        }
         setSelectedType(type);
         setSelectedIndex(0);
         setCustomText('');
@@ -75,17 +79,17 @@ export default function Home() {
     };
 
     const handleNextToTemplates = () => {
+        if (selectedIndex === -1) {
+            // Jump to gallery with only the category filter, drop custom text as per user request
+            navigate('/gallery', { state: { intent: selectedType, scene: 'all' } });
+            return;
+        }
+
         const option = INTENT_DATA[selectedType].options[selectedIndex];
 
         // Handling redirects for 'explore' intent
         if (option?.id === 'explore') {
             navigate('/gallery', { state: { intent: selectedType, scene: 'all' } });
-            return;
-        }
-
-        // Special handling for neutral category if needed
-        if (selectedType === 'neutral' && option?.id === 'explore') {
-            navigate('/gallery', { state: { intent: 'all', scene: 'all' } });
             return;
         }
 
@@ -96,11 +100,10 @@ export default function Home() {
     const handleUseTemplate = (templateId) => {
         setIsNavigating(true);
         const finalScene = selectedIndex === -1 ? 'custom' : selectedIndex;
-        const finalText = selectedIndex === -1 ? customText : INTENT_DATA[selectedType].options[selectedIndex].text;
 
         const doNavigate = () => {
             navigate(`/builder?type=${selectedType}&scene=${finalScene}&templateId=${templateId}`, {
-                state: { customText: finalText, from: 'home' }
+                state: { from: 'home' }
             });
         };
 
@@ -124,33 +127,30 @@ export default function Home() {
 
     // Dynamically calculate recommended templates
     const recommendedTemplates = useMemo(() => {
-        let sourceList = templates.length > 0 ? templates : currentIntent.templates;
+        if (templates.length === 0) return null; // Using null to indicate loading
+
+        let sourceList = templates;
         let filtered = [];
 
-        if (templates.length > 0) {
-            // Find templates matching the selected category array
-            const categoryMatches = sourceList.filter(t => t.categories && t.categories.includes(selectedType));
+        // Find templates matching the selected category array
+        const categoryMatches = sourceList.filter(t => t.categories && t.categories.includes(selectedType));
 
-            if (selectedIndex === -1) {
-                // Return top 3 from category
-                filtered = categoryMatches.slice(0, 3);
-            } else {
-                const optionId = currentIntent.options[selectedIndex].id;
-                // Find templates matching exact scene ID
-                const sceneMatches = categoryMatches.filter(t => t.scene === optionId);
+        if (selectedIndex === -1) {
+            // Return top 3 from category
+            filtered = categoryMatches.slice(0, 3);
+        } else {
+            const optionId = currentIntent.options[selectedIndex].id;
+            // Find templates matching exact scene ID
+            const sceneMatches = categoryMatches.filter(t => t.scene === optionId);
 
-                filtered = [...sceneMatches];
-                // Pad with category matches if we have fewer than 3
-                for (const catTpl of categoryMatches) {
-                    if (filtered.length >= 3) break;
-                    if (!filtered.find(t => t.name === catTpl.name)) {
-                        filtered.push(catTpl);
-                    }
+            filtered = [...sceneMatches];
+            // Pad with category matches if we have fewer than 3
+            for (const catTpl of categoryMatches) {
+                if (filtered.length >= 3) break;
+                if (!filtered.find(t => t.name === catTpl.name)) {
+                    filtered.push(catTpl);
                 }
             }
-        } else {
-            // Fallback filtering
-            filtered = sourceList.slice(0, 3);
         }
 
         // Normalize template properties for rendering
@@ -241,25 +241,34 @@ export default function Home() {
                             ))}
                             <div
                                 onClick={() => setSelectedIndex(-1)}
-                                className={`w-full text-left group px-4 md:px-8 py-3 md:py-8 rounded-xl backdrop-blur-md border transition-all duration-300 ease-out flex flex-col items-start cursor-pointer
-                                    ${selectedIndex === -1
-                                        ? 'bg-primary/20 border-primary/60 shadow-[0_0_20px_rgba(224,142,254,0.25)] ring-1 ring-primary/40 transform scale-[1.01]'
-                                        : 'bg-surface-container-low/80 border-outline-variant/30 hover:bg-surface-container hover:border-primary/40 hover:shadow-[0_0_20px_rgba(224,142,254,0.15)]'
-                                    }`}
+                                className={`w-full group p-[2px] rounded-2xl transition-all duration-500 bg-gradient-to-br transition-all ${selectedIndex === -1 ? 'from-primary/60 to-secondary/60 shadow-[0_20px_40px_rgba(224,142,254,0.15)]' : 'from-outline-variant/20 to-outline-variant/10 hover:from-primary/30 hover:to-secondary/20'}`}
                             >
-                                <span className={`text-xs md:text-base font-medium mb-2 md:mb-3 transition-colors ${selectedIndex === -1 ? 'text-primary' : 'text-on-surface-variant group-hover:text-primary-dim'}`}>
-                                    或者，自己写下此刻想说的话：
-                                </span>
-                                <textarea
-                                    value={customText}
-                                    onChange={(e) => {
-                                        setCustomText(e.target.value);
-                                        if (selectedIndex !== -1) setSelectedIndex(-1);
-                                    }}
-                                    onClick={(e) => { e.stopPropagation(); setSelectedIndex(-1); }}
-                                    placeholder="输入你的专属意境卡片文字..."
-                                    className="w-full bg-surface-container-highest/50 border border-outline-variant/30 rounded-lg p-2.5 md:p-4 text-on-surface text-sm md:text-lg focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40 resize-none h-16 md:h-24 font-light transition-all"
-                                />
+                                <div className={`w-full h-full bg-slate-900/60 backdrop-blur-2xl rounded-[14px] p-4 md:p-8 flex flex-col items-start cursor-pointer transition-all duration-500 ${selectedIndex === -1 ? 'bg-slate-900/40' : ''}`}>
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500 ${selectedIndex === -1 ? 'bg-primary/20 text-primary' : 'bg-white/5 text-on-surface-variant/40'}`}>
+                                            <span className="material-symbols-outlined text-sm md:text-base">edit_note</span>
+                                        </div>
+                                        <span className={`text-xs md:text-lg font-medium transition-colors ${selectedIndex === -1 ? 'text-primary' : 'text-on-surface-variant group-hover:text-primary-dim'}`}>
+                                            或者，自己写下此刻想说的话：
+                                        </span>
+                                    </div>
+                                    <textarea
+                                        value={customText}
+                                        onChange={(e) => {
+                                            setCustomText(e.target.value);
+                                            if (selectedIndex !== -1) setSelectedIndex(-1);
+                                        }}
+                                        onClick={(e) => { e.stopPropagation(); setSelectedIndex(-1); }}
+                                        placeholder="在这里输入你的专属记忆..."
+                                        className="w-full bg-transparent border-none text-on-surface text-base md:text-xl focus:outline-none resize-none h-24 md:h-32 font-light placeholder:text-on-surface-variant/30 custom-scrollbar leading-relaxed"
+                                    />
+                                    {selectedIndex === -1 && (
+                                        <div className="mt-4 flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-500">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                                            <span className="text-[10px] md:text-xs text-primary-dim uppercase tracking-widest font-bold">正在捕捉灵感...</span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </main>
@@ -298,7 +307,11 @@ export default function Home() {
                         </section>
 
                         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8 w-full mb-6 md:mb-16 mt-1 md:mt-2">
-                            {recommendedTemplates.length === 0 ? (
+                            {recommendedTemplates === null ? (
+                                <div className="col-span-full flex justify-center py-20">
+                                    <span className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
+                                </div>
+                            ) : recommendedTemplates.length === 0 ? (
                                 <div className="col-span-full text-center py-10 opacity-60">
                                     暂无完全匹配的模板，不妨去模板大厅看看 🥺
                                 </div>
@@ -342,11 +355,10 @@ export default function Home() {
                                                 <span className="text-[10px] md:text-[11px] font-bold tracking-tight whitespace-nowrap">{tier.label}</span>
                                             </div>
 
-                                            {(i === 0 && selectedTemplateId === null) && (
-                                                <div className="absolute top-2 left-2 px-2 py-0.5 bg-white/10 backdrop-blur-md text-white text-[9px] font-bold tracking-widest uppercase rounded border border-white/10 z-10">
-                                                    极佳适配
-                                                </div>
-                                            )}
+                                            <div className="preview-overlay-btn" onClick={(e) => { e.stopPropagation(); window.open(`/preview/${tpl.name}`, '_blank'); }}>
+                                                <span className="material-symbols-outlined">visibility</span>
+                                                快速预览
+                                            </div>
 
                                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 pointer-events-none group-hover:opacity-20 transition-opacity">
                                                 <span className="material-symbols-outlined text-5xl md:text-6xl text-white">

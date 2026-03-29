@@ -322,7 +322,7 @@ export default function Gallery() {
                                                 onClick={() => {
                                                     const url = `https://www.moodspace.xyz/preview/${template.name}`;
                                                     const title = template.title || template.name;
-                                                    setPosterTemplate({ url, title, rawHtml: '' });
+                                                    setPosterTemplate({ url, title, name: template.name, rawHtml: '' });
                                                     fetch(`https://www.moodspace.xyz/assets/${template.name}/index.html`)
                                                         .then(res => res.text())
                                                         .then(html => setPosterTemplate(prev => prev && prev.url === url ? { ...prev, rawHtml: html } : prev))
@@ -428,6 +428,7 @@ export default function Gallery() {
                 projectUrl={posterTemplate?.url}
                 title="模板预览"
                 templateTitle={posterTemplate?.title}
+                templateName={posterTemplate?.name}
                 rawHtml={posterTemplate?.rawHtml}
             />
         </div>

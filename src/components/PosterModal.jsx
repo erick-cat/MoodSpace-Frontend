@@ -10,14 +10,21 @@ import QRCode from 'qrcode';
  *   projectUrl    — full URL: https://xxx.moodspace.xyz
  *   title         — project memo / page title
  *   templateTitle — human-readable template title (e.g. "星空告白")
+ *   templateName  — technical template name (slug) for asset lookup
  *   rawHtml       — optional: the template's full HTML string for srcdoc preview
  *                   (avoids X-Frame-Options cross-origin block)
  */
-export default function PosterModal({ isOpen, onClose, projectUrl, title, templateTitle, rawHtml }) {
+export default function PosterModal({ isOpen, onClose, projectUrl, title, templateTitle, templateName, rawHtml }) {
     const posterRef = useRef(null);
     const [qrDataUrl, setQrDataUrl] = useState('');
     const [generating, setGenerating] = useState(false);
     const [srcdoc, setSrcdoc] = useState('');
+    const [imageFailed, setImageFailed] = useState(false);
+
+    // Reset failure state when template changes
+    useEffect(() => {
+        setImageFailed(false);
+    }, [templateName]);
 
     // Generate QR code whenever URL changes
     useEffect(() => {
@@ -135,10 +142,19 @@ export default function PosterModal({ isOpen, onClose, projectUrl, title, templa
                         )}
                     </div>
 
-                    {/* Preview panel — either srcdoc iframe (no X-Frame-Options issue) or gradient card */}
+                    {/* Preview panel — prioritize static preview.jpg, fallback to srcdoc iframe */}
                     <div style={{ margin: '0 16px', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', height: '185px', background: 'linear-gradient(135deg, rgba(224,142,254,0.08), rgba(144,148,250,0.05))', position: 'relative' }}>
-                        {srcdoc ? (
-                            /* srcdoc iframe — bypasses X-Frame-Options entirely */
+                        {templateName && !imageFailed ? (
+                            /* Static high-fidelity preview image (Captureable by html2canvas) */
+                            <img
+                                src={`https://www.moodspace.xyz/assets/${templateName}/preview.jpg`}
+                                alt="Preview"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                onError={() => setImageFailed(true)}
+                                crossOrigin="anonymous"
+                            />
+                        ) : srcdoc ? (
+                            /* srcdoc iframe fallback — bypasses X-Frame-Options entirely */
                             <iframe
                                 srcDoc={srcdoc}
                                 style={{ width: '1280px', height: '720px', transformOrigin: 'top left', transform: 'scale(0.25625)', border: 'none', pointerEvents: 'none' }}
